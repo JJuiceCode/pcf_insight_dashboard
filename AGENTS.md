@@ -6,76 +6,95 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 <!-- END:nextjs-agent-rules -->
 
-# Project Rules - 과제.1
+# Additional Recommended Rules
 
-## Project Context
+## Architecture Rules
 
-This project is a frontend hiring assignment for HanaLoop.
+- Prefer domain-first architecture over UI-first implementation.
+- React components should consume already-calculated data.
+- Do not calculate emissions directly inside React components.
+- Keep business logic inside `features/emissions/*`.
+- Keep formatting logic separated from calculation logic.
 
-The goal is to build a Product Carbon Footprint dashboard for the CT-045 Computer Monitor.
+## Seed Data Rules
 
-The dashboard should help executives and operators understand:
+- Do not modify seed activity data unless explicitly required.
+- Do not duplicate emission factor values inside activity records.
+- Treat seed data as immutable demo source data.
 
-- total PCF
-- GHG Scope classification
-- activity-based emissions
-- emission factor application
-- monthly and category-level emission insights
+## Calculation Rules
 
-## Domain Rules
+- All calculations must internally use `kgCO2e`.
+- `tCO2e` should only be used for formatted display values.
+- Invalid calculation rows must be represented explicitly.
+- Missing emission factors must never fail silently.
+- Aggregation functions should ignore invalid rows unless otherwise required.
 
-- PCF means Product Carbon Footprint.
-- All emissions are calculated in kgCO2e.
-- 1 tCO2e = 1,000 kgCO2e.
-- Emissions are calculated as: activity amount × emission factor.
-- Activity records and emission factors must be modeled separately.
-- Emission factors should include versioning fields such as version and effectiveFrom.
+## TypeScript Rules
 
-## GHG Scope Mapping
+- Prefer explicit return types for exported functions.
+- Prefer discriminated or explicit domain types over generic objects.
+- Avoid deeply nested anonymous object types when reusable domain types are possible.
 
-- electricity / 한국전력 = Scope 2
-- material / 플라스틱 1, 플라스틱 2 = Scope 3
-- transport / 트럭 = Scope 3
-- Scope 1 has no provided activity data and should be represented as 0.
-- Do not invent Scope 1 activity records.
+## Tailwind / Styling Rules
 
-## Technical Rules
+- Use Tailwind utility classes only.
+- Prefer reusable UI primitives for repeated card or badge styles.
+- Keep dark mode compatibility using `dark:` variants.
+- Avoid hardcoded colors that break dark mode readability.
+- Use orange accent colors consistently for:
+  - active navigation
+  - KPI highlights
+  - badges
+  - status indicators
+  - important metrics
 
-- Use Next.js App Router.
-- Use TypeScript.
-- Use Tailwind CSS.
-- Do not use MUI, Ant Design, or other heavy component libraries.
-- Avoid unnecessary dependencies.
-- Keep calculation logic outside React components.
-- Avoid `any`.
-- Use strict, meaningful domain types.
+## Responsive Layout Rules
 
-## UI Rules
+- Mobile-first responsive design.
+- Dashboard grids should collapse naturally on smaller screens.
+- Tables should support horizontal scrolling on mobile.
+- Sidebar should not block usability on tablet/mobile layouts.
 
-- The UI should feel like a modern SaaS analytics dashboard.
-- The layout must be responsive.
-- Support light and dark mode using Tailwind CSS.
-- Use orange as the main accent color.
-- Tables must be horizontally scrollable on small screens.
-- KPI values must come from calculation utilities, not hardcoded numbers.
+## Naming Rules
 
-## Code Organization
+Prefer explicit domain names such as:
 
-Prefer clear separation:
+- `CalculatedEmissionRow`
+- `EmissionSummary`
+- `ScopeEmissionSummary`
+- `MonthlyEmissionSummary`
 
-- `features/emissions/types.ts`
-- `features/emissions/seed.ts`
-- `features/emissions/calculations.ts`
-- `features/emissions/formatters.ts`
-- `components/dashboard/*`
-- `components/layout/*`
-- `components/ui/*`
+Avoid vague names such as:
 
-## Important
+- `Data`
+- `Info`
+- `Result`
+- `Item`
 
-When making changes:
+## Comment Rules
 
-- Keep components small and readable.
-- Keep domain logic testable.
-- Do not silently ignore missing emission factors.
-- Explain assumptions in code comments only when they are domain-related.
+- Add comments only when explaining domain decisions or architectural intent.
+- Avoid obvious implementation comments.
+- Keep comments concise and professional.
+
+## Assignment Intent
+
+This assignment is intended to demonstrate:
+
+- PCF domain understanding
+- clean frontend architecture
+- SaaS dashboard UX thinking
+- maintainable calculation flow
+- operator-friendly data transparency
+
+The implementation should feel like a scalable internal carbon accounting platform, not a static demo page.
+
+When uncertain, prioritize:
+
+1. domain clarity
+2. maintainability
+3. explicit data flow
+4. type safety
+5. operator readability
+   over visual complexity.

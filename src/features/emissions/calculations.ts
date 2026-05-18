@@ -273,6 +273,29 @@ export function kgToTonnes(kg: number): number {
 }
 
 /**
+ * Build per-activity-type lists of available description options from
+ * the emission factor catalog.
+ *
+ * Used by input forms that should only offer descriptions which will
+ * actually resolve to a factor at calculation time — preventing
+ * "Missing factor" rows from being introduced from the UI layer.
+ */
+export function getDescriptionOptionsByActivityType(
+  emissionFactors: readonly EmissionFactor[],
+): Record<ActivityType, string[]> {
+  const result: Record<ActivityType, string[]> = {
+    electricity: [],
+    material: [],
+    transport: [],
+  };
+  for (const factor of emissionFactors) {
+    const list = result[factor.activityType];
+    if (!list.includes(factor.name)) list.push(factor.name);
+  }
+  return result;
+}
+
+/**
  * Re-export of the canonical lists so the UI layer can iterate over
  * activity types and scopes in a stable, agreed order without
  * importing from two modules.

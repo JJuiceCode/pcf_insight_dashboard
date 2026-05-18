@@ -157,3 +157,15 @@ export const ACTIVITY_TYPES: readonly ActivityType[] = [
   'material',
   'transport',
 ] as const;
+
+/**
+ * Runtime mapping from an activity type to the unit its activity
+ * records must carry. Mirrors the compile-time `FactorUnitFor<U>`
+ * type and centralizes the rule so input forms, validators, and the
+ * emission-factor catalog cannot drift out of agreement.
+ */
+export const UNIT_BY_ACTIVITY_TYPE: Record<ActivityType, ActivityUnit> = {
+  electricity: 'kWh',
+  material: 'kg',
+  transport: 'ton-km',
+};

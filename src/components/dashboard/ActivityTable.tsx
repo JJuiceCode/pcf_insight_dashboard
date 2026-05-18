@@ -1,4 +1,7 @@
+'use client';
+
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import {
   formatActivityTypeLabel,
   formatKgCO2e,
@@ -21,11 +24,17 @@ import { cn } from '@/lib/utils';
  */
 export interface ActivityTableProps {
   rows: readonly CalculatedEmissionRow[];
+  /**
+   * Optional callback to open an external activity-input experience.
+   * When omitted, the "Add activity" button is not rendered so this
+   * component remains usable in static / audit-only contexts.
+   */
+  onAddActivity?: () => void;
 }
 
 const PLACEHOLDER = '—';
 
-export function ActivityTable({ rows }: ActivityTableProps) {
+export function ActivityTable({ rows, onAddActivity }: ActivityTableProps) {
   const invalidCount = rows.reduce(
     (count, row) => (row.isValid ? count : count + 1),
     0,
@@ -49,13 +58,18 @@ export function ActivityTable({ rows }: ActivityTableProps) {
               Read-only audit view of each activity, the resolved emission factor, and the calculated kgCO2e.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="neutral">{rows.length} records</Badge>
             {invalidCount > 0 ? (
               <Badge variant="warning">{invalidCount} need review</Badge>
             ) : (
               <Badge variant="success">All matched</Badge>
             )}
+            {onAddActivity ? (
+              <Button variant="primary" onClick={onAddActivity}>
+                <span aria-hidden>+</span> Add activity
+              </Button>
+            ) : null}
           </div>
         </header>
 

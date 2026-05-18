@@ -4,7 +4,10 @@ import {
   formatMonth,
   formatPercentage,
 } from '@/features/emissions/formatters';
+import type { EmissionBreakdownRow } from '@/features/emissions/selectors';
 import { cn } from '@/lib/utils';
+
+export type { EmissionBreakdownRow };
 
 /**
  * Mid-density dashboard section: three lists of emission breakdowns.
@@ -18,12 +21,6 @@ import { cn } from '@/lib/utils';
  *
  * No chart library is introduced — bars are plain Tailwind blocks.
  */
-export interface EmissionBreakdownRow {
-  label: string;
-  emissionKgCO2e: number;
-  percentage: number;
-}
-
 export interface MonthlyEmissionRow {
   month: string;
   emissionKgCO2e: number;

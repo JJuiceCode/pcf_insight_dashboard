@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens for the PCF Insight Dashboard.
+ *
+ * Light and dark mode are both driven by `prefers-color-scheme` for
+ * now. No theme toggle is wired up in this step (per spec). The
+ * orange family below is reused for status badges, active nav, and
+ * subtle accent borders.
+ */
+:root {
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --muted: #525252;
+  --surface: #ffffff;
+  --border: #e5e5e5;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #fafafa;
+    --muted: #a3a3a3;
+    --surface: #171717;
+    --border: #262626;
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

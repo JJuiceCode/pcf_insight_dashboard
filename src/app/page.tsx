@@ -1,5 +1,6 @@
 import { AppShell } from '@/components/layout/AppShell';
 import { Header } from '@/components/layout/Header';
+import { Card } from '@/components/ui/Card';
 
 const PLACEHOLDERS: ReadonlyArray<{ title: string; body: string }> = [
   {
@@ -47,7 +48,7 @@ function PlaceholderCard({
   body: string;
 }) {
   return (
-    <article className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+    <Card role="region" aria-label={title}>
       <div className="flex items-center gap-2">
         <span
           aria-hidden
@@ -63,6 +64,6 @@ function PlaceholderCard({
       <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
         {body}
       </p>
-    </article>
+    </Card>
   );
 }

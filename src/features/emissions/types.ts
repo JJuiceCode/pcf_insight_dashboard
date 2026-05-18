@@ -116,3 +116,44 @@ export interface EmissionFactor {
   /** Optional free-form note (domain context, caveats, ...). */
   note?: string;
 }
+
+/**
+ * Result of running the emission calculation against a single
+ * `ActivityRecord`.
+ *
+ * Invalid states are made explicit (`isValid: false`) so the dashboard
+ * can surface data-quality issues instead of silently computing
+ * wrong numbers when an emission factor cannot be resolved.
+ */
+export interface CalculatedEmissionRow {
+  activity: ActivityRecord;
+  /** Resolved factor, present only when `isValid` is true. */
+  emissionFactor?: EmissionFactor;
+  /** Always in kgCO2e. Zero when the row is invalid. */
+  emissionKgCO2e: number;
+  /** Copied from the matched emission factor for convenience. */
+  scope?: GhgScope;
+  isValid: boolean;
+  /** Human-readable explanation of why the row is invalid. */
+  errorMessage?: string;
+}
+
+/**
+ * The canonical, ordered list of GHG scopes the dashboard reports on.
+ *
+ * Scope 1 is included even though the current dataset has no Scope 1
+ * activity records: the dashboard must still surface "Scope 1 = 0" so
+ * stakeholders can see that direct emissions were considered.
+ */
+export const GHG_SCOPES: readonly GhgScope[] = [
+  'scope1',
+  'scope2',
+  'scope3',
+] as const;
+
+/** The canonical, ordered list of activity types reported on. */
+export const ACTIVITY_TYPES: readonly ActivityType[] = [
+  'electricity',
+  'material',
+  'transport',
+] as const;

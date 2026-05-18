@@ -1,69 +1,100 @@
+import { DashboardSummary } from '@/components/dashboard/DashboardSummary';
+import { DomainExplanation } from '@/components/dashboard/DomainExplanation';
+import {
+  EmissionsOverview,
+  type EmissionBreakdownRow,
+} from '@/components/dashboard/EmissionsOverview';
 import { AppShell } from '@/components/layout/AppShell';
 import { Header } from '@/components/layout/Header';
-import { Card } from '@/components/ui/Card';
+import {
+  ACTIVITY_TYPES,
+  GHG_SCOPES,
+  calculateActivityRowsWithEmissions,
+  calculateEmissionsByActivityType,
+  calculateEmissionsByMonth,
+  calculateEmissionsByScope,
+  calculatePeakMonth,
+  calculateTopContributor,
+  calculateTotalEmissions,
+} from '@/features/emissions/calculations';
+import {
+  formatActivityTypeLabel,
+  formatScopeLabel,
+} from '@/features/emissions/formatters';
+import {
+  activityRecords,
+  emissionFactors,
+} from '@/features/emissions/seed';
 
-const PLACEHOLDERS: ReadonlyArray<{ title: string; body: string }> = [
-  {
-    title: 'Dashboard summary',
-    body: 'Dashboard summary will be added in the next step.',
-  },
-  {
-    title: 'Emissions overview',
-    body: 'Emissions overview will be added in the next step.',
-  },
-  {
-    title: 'Activity verification',
-    body: 'Activity verification table will be added in the next step.',
-  },
-];
-
+/**
+ * Dashboard page composition.
+ *
+ * All domain calculation happens once at the top of this server
+ * component. The resulting numbers are then passed down to
+ * presentation-only components, so no deeply nested component ever
+ * re-implements aggregation or formatting.
+ */
 export default function Home() {
+  const rows = calculateActivityRowsWithEmissions(
+    activityRecords,
+    emissionFactors,
+  );
+
+  const totalKgCO2e = calculateTotalEmissions(rows);
+  const emissionsByActivityType = calculateEmissionsByActivityType(rows);
+  const emissionsByScope = calculateEmissionsByScope(rows);
+  const monthlyEmissions = calculateEmissionsByMonth(rows);
+  const topContributor = calculateTopContributor(rows);
+  const peakMonth = calculatePeakMonth(rows);
+
+  // Share-of-total percentages — computed here once so progress bars,
+  // KPI tiles, and breakdown rows agree on the same denominator.
+  const shareOfTotal = (value: number): number =>
+    totalKgCO2e > 0 ? (value / totalKgCO2e) * 100 : 0;
+
+  const activityTypeRows: EmissionBreakdownRow[] = ACTIVITY_TYPES.map(
+    (type) => ({
+      label: formatActivityTypeLabel(type),
+      emissionKgCO2e: emissionsByActivityType[type],
+      percentage: shareOfTotal(emissionsByActivityType[type]),
+    }),
+  );
+
+  const scopeRows: EmissionBreakdownRow[] = GHG_SCOPES.map((scope) => ({
+    label: formatScopeLabel(scope),
+    emissionKgCO2e: emissionsByScope[scope],
+    percentage: shareOfTotal(emissionsByScope[scope]),
+  }));
+
+  const scope3SharePercent = shareOfTotal(emissionsByScope.scope3);
+
   return (
     <AppShell>
       <Header />
 
-      <section
-        aria-label="Dashboard content"
-        className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
-      >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {PLACEHOLDERS.map((item) => (
-            <PlaceholderCard
-              key={item.title}
-              title={item.title}
-              body={item.body}
-            />
-          ))}
-        </div>
-      </section>
-    </AppShell>
-  );
-}
-
-function PlaceholderCard({
-  title,
-  body,
-}: {
-  title: string;
-  body: string;
-}) {
-  return (
-    <Card role="region" aria-label={title}>
-      <div className="flex items-center gap-2">
-        <span
-          aria-hidden
-          className="h-1.5 w-1.5 rounded-full bg-orange-500 dark:bg-orange-400"
+      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:space-y-8 lg:px-8 lg:py-8">
+        <DashboardSummary
+          totalKgCO2e={totalKgCO2e}
+          scope3SharePercent={scope3SharePercent}
+          topContributor={
+            topContributor
+              ? {
+                  name: topContributor.name,
+                  emissionKgCO2e: topContributor.emissionKgCO2e,
+                }
+              : null
+          }
+          peakMonth={peakMonth}
         />
-        <p className="text-[11px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-          Coming next
-        </p>
+
+        <DomainExplanation />
+
+        <EmissionsOverview
+          emissionsByActivityType={activityTypeRows}
+          emissionsByScope={scopeRows}
+          monthlyEmissions={monthlyEmissions}
+        />
       </div>
-      <h2 className="mt-2 text-base font-semibold text-neutral-900 dark:text-neutral-50">
-        {title}
-      </h2>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        {body}
-      </p>
-    </Card>
+    </AppShell>
   );
 }

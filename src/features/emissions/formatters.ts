@@ -75,3 +75,30 @@ const SCOPE_LABEL: Record<GhgScope, string> = {
 export function formatScopeLabel(scope: GhgScope): string {
   return SCOPE_LABEL[scope];
 }
+
+/**
+ * Format a `YYYY-MM` calendar-month key for display.
+ *
+ *  - `'2025-05'` -> `'May 2025'`
+ *  - invalid input is returned unchanged so the UI never silently
+ *    masks a data problem.
+ *
+ * `Date.UTC` + `timeZone: 'UTC'` is used to keep the month label
+ * stable regardless of the server/browser timezone. This matters for
+ * SSR consistency.
+ */
+export function formatMonth(yyyymm: string): string {
+  const match = /^(\d{4})-(\d{2})$/.exec(yyyymm);
+  if (!match) return yyyymm;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return yyyymm;
+
+  const date = new Date(Date.UTC(year, month - 1, 1));
+  return new Intl.DateTimeFormat(NUMBER_LOCALE, {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}

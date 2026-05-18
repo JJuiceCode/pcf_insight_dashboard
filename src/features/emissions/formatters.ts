@@ -27,6 +27,21 @@ function formatFixedDecimals(value: number, decimals: number): string {
   });
 }
 
+/**
+ * Generic numeric formatter for table cells that may contain either
+ * integer amounts (e.g. `110`) or factor values with significant
+ * decimals (e.g. `0.456`).
+ *
+ * Trailing zeros are not forced — display preserves the natural
+ * precision of the source value while still grouping thousands.
+ */
+export function formatNumber(value: number): string {
+  if (!Number.isFinite(value)) return '—';
+  return value.toLocaleString(NUMBER_LOCALE, {
+    maximumFractionDigits: 6,
+  });
+}
+
 /** e.g. `11,072.724 kgCO2e` */
 export function formatKgCO2e(value: number): string {
   return `${formatFixedDecimals(value, EMISSION_DECIMALS)} kgCO2e`;

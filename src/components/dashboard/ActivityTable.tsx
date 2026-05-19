@@ -1,15 +1,23 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 import {
   formatActivityTypeLabel,
   formatKgCO2e,
+  formatMonth,
   formatNumber,
   formatScopeLabel,
 } from '@/features/emissions/formatters';
-import type {
-  CalculatedEmissionRow,
-  EmissionFactor,
+import {
+  ACTIVITY_TYPES,
+  GHG_SCOPES,
+  type ActivityType,
+  type CalculatedEmissionRow,
+  type EmissionFactor,
+  type GhgScope,
 } from '@/features/emissions/types';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +29,9 @@ import { cn } from '@/lib/utils';
  *
  * 이 컴포넌트는 계산이나 데이터 변경을 수행하지 않고,
  * `CalculatedEmissionRow`와 포맷터가 넘겨준 값을 화면에 표시하는 역할만 담당한다.
+ *
+ * 필터는 이미 계산된 행을 좁히는 클라이언트 상태로만 동작한다.
+ * 배출량을 재계산하지 않고, 원본 `rows` 배열도 변경하지 않는다.
  */
 export interface ActivityTableProps {
   rows: readonly CalculatedEmissionRow[];
@@ -35,12 +46,61 @@ export interface ActivityTableProps {
 }
 
 const PLACEHOLDER = '—';
+const TABLE_COLUMN_COUNT = 11;
+
+/**
+ * 운영자가 활동 행을 좁혀볼 때 사용하는 필터 상태.
+ * 모든 값의 기본은 `'all'`이고, 한 항목도 데이터를 제외하지 않는다.
+ */
+type ActivityTableFilters = {
+  month: string;
+  activityType: 'all' | ActivityType;
+  scope: 'all' | GhgScope;
+  description: string;
+};
+
+const DEFAULT_FILTERS: ActivityTableFilters = {
+  month: 'all',
+  activityType: 'all',
+  scope: 'all',
+  description: 'all',
+};
+
+/**
+ * 도메인에 정의된 알려진 설명 라벨.
+ *
+ * 현재 데이터에 해당 설명이 없어도 운영자가 즉시 검증할 수 있도록
+ * 항상 선택 가능한 옵션으로 노출한다.
+ */
+const KNOWN_DESCRIPTIONS: readonly string[] = [
+  '한국전력',
+  '플라스틱 1',
+  '플라스틱 2',
+  '트럭',
+];
 
 export function ActivityTable({
   rows,
   activeFactors,
   onAddClick,
 }: ActivityTableProps) {
+  const [filters, setFilters] = useState<ActivityTableFilters>(DEFAULT_FILTERS);
+
+  const monthOptions = useMemo(() => collectMonthOptions(rows), [rows]);
+  const descriptionOptions = useMemo(
+    () => collectDescriptionOptions(rows),
+    [rows],
+  );
+
+  const filteredRows = useMemo(
+    () => filterActivityRows(rows, filters),
+    [rows, filters],
+  );
+
+  const resetFilters = useCallback(() => {
+    setFilters(DEFAULT_FILTERS);
+  }, []);
+
   const invalidCount = rows.reduce(
     (count, row) => (row.isValid ? count : count + 1),
     0,
@@ -91,6 +151,16 @@ export function ActivityTable({
           <ActiveFactorsBar factors={activeFactors} />
         ) : null}
 
+        <ActivityFilterBar
+          filters={filters}
+          monthOptions={monthOptions}
+          descriptionOptions={descriptionOptions}
+          totalCount={rows.length}
+          visibleCount={filteredRows.length}
+          onChange={setFilters}
+          onReset={resetFilters}
+        />
+
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px] border-collapse text-sm">
             <thead className="bg-neutral-50 text-left text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:bg-neutral-950/60 dark:text-neutral-400">
@@ -109,14 +179,288 @@ export function ActivityTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <ActivityRow key={row.activity.id} row={row} />
-              ))}
+              {filteredRows.length === 0 ? (
+                <EmptyFilteredRow onReset={resetFilters} />
+              ) : (
+                filteredRows.map((row) => (
+                  <ActivityRow key={row.activity.id} row={row} />
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * 계산이 끝난 활동 행을 사용자가 선택한 필터 기준으로 좁힌다.
+ *
+ * - month/activityType/description은 `activity` 필드만 보고 판단해
+ *   유효하지 않은 행도 필터 대상이 된다.
+ * - scope는 `row.scope`에만 존재하므로, 특정 Scope를 선택했을 때는
+ *   계수 매칭이 실패해 scope가 없는 행은 제외된다.
+ *   "전체"를 선택하면 그대로 유지된다.
+ */
+function filterActivityRows(
+  rows: readonly CalculatedEmissionRow[],
+  filters: ActivityTableFilters,
+): CalculatedEmissionRow[] {
+  return rows.filter((row) => {
+    const { activity, scope } = row;
+
+    if (
+      filters.month !== 'all' &&
+      toMonthKey(activity.date) !== filters.month
+    ) {
+      return false;
+    }
+
+    if (
+      filters.activityType !== 'all' &&
+      activity.activityType !== filters.activityType
+    ) {
+      return false;
+    }
+
+    if (filters.scope !== 'all' && scope !== filters.scope) {
+      return false;
+    }
+
+    if (
+      filters.description !== 'all' &&
+      activity.description !== filters.description
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+/** `YYYY-MM-DD` ISO 날짜에서 `YYYY-MM` 월 키를 추출한다. */
+function toMonthKey(isoDate: string): string {
+  return isoDate.slice(0, 7);
+}
+
+/** 행에서 발견된 모든 `YYYY-MM` 월 키를 오름차순 정렬해 반환한다. */
+function collectMonthOptions(
+  rows: readonly CalculatedEmissionRow[],
+): readonly string[] {
+  const set = new Set<string>();
+  for (const row of rows) {
+    set.add(toMonthKey(row.activity.date));
+  }
+  return Array.from(set).sort();
+}
+
+/**
+ * 알려진 도메인 라벨과 실제 행에 등장한 설명을 합쳐 정렬한 고유 목록.
+ * 데이터에 등장하지 않더라도 도메인 라벨은 항상 옵션으로 노출된다.
+ */
+function collectDescriptionOptions(
+  rows: readonly CalculatedEmissionRow[],
+): readonly string[] {
+  const set = new Set<string>(KNOWN_DESCRIPTIONS);
+  for (const row of rows) {
+    if (row.activity.description) {
+      set.add(row.activity.description);
+    }
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'ko'));
+}
+
+function isFilterActive(filters: ActivityTableFilters): boolean {
+  return (
+    filters.month !== 'all' ||
+    filters.activityType !== 'all' ||
+    filters.scope !== 'all' ||
+    filters.description !== 'all'
+  );
+}
+
+interface ActivityFilterBarProps {
+  filters: ActivityTableFilters;
+  monthOptions: readonly string[];
+  descriptionOptions: readonly string[];
+  totalCount: number;
+  visibleCount: number;
+  onChange: (next: ActivityTableFilters) => void;
+  onReset: () => void;
+}
+
+/** 테이블 상단 필터 바. 모든 컨트롤은 로컬 상태에만 영향을 준다. */
+function ActivityFilterBar({
+  filters,
+  monthOptions,
+  descriptionOptions,
+  totalCount,
+  visibleCount,
+  onChange,
+  onReset,
+}: ActivityFilterBarProps) {
+  const filterActive = isFilterActive(filters);
+
+  return (
+    <div
+      aria-label="활동 필터"
+      className="border-b border-neutral-200 bg-white px-5 py-4 dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <FilterField label="기간" htmlFor="activity-filter-month">
+          <Select
+            id="activity-filter-month"
+            value={filters.month}
+            onChange={(event) =>
+              onChange({ ...filters, month: event.target.value })
+            }
+            aria-label="기간 필터"
+          >
+            <option value="all">전체</option>
+            {monthOptions.map((month) => (
+              <option key={month} value={month}>
+                {formatMonth(month)}
+              </option>
+            ))}
+          </Select>
+        </FilterField>
+
+        <FilterField label="활동 유형" htmlFor="activity-filter-type">
+          <Select
+            id="activity-filter-type"
+            value={filters.activityType}
+            onChange={(event) =>
+              onChange({
+                ...filters,
+                activityType: event.target.value as 'all' | ActivityType,
+              })
+            }
+            aria-label="활동 유형 필터"
+          >
+            <option value="all">전체</option>
+            {ACTIVITY_TYPES.map((activityType) => (
+              <option key={activityType} value={activityType}>
+                {formatActivityTypeLabel(activityType)}
+              </option>
+            ))}
+          </Select>
+        </FilterField>
+
+        <FilterField label="GHG Scope" htmlFor="activity-filter-scope">
+          <Select
+            id="activity-filter-scope"
+            value={filters.scope}
+            onChange={(event) =>
+              onChange({
+                ...filters,
+                scope: event.target.value as 'all' | GhgScope,
+              })
+            }
+            aria-label="GHG Scope 필터"
+          >
+            <option value="all">전체</option>
+            {GHG_SCOPES.map((scope) => (
+              <option key={scope} value={scope}>
+                {formatScopeLabel(scope)}
+              </option>
+            ))}
+          </Select>
+        </FilterField>
+
+        <FilterField label="설명" htmlFor="activity-filter-description">
+          <Select
+            id="activity-filter-description"
+            value={filters.description}
+            onChange={(event) =>
+              onChange({ ...filters, description: event.target.value })
+            }
+            aria-label="설명 필터"
+          >
+            <option value="all">전체</option>
+            {descriptionOptions.map((description) => (
+              <option key={description} value={description}>
+                {description}
+              </option>
+            ))}
+          </Select>
+        </FilterField>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <p
+          aria-live="polite"
+          className="text-neutral-500 dark:text-neutral-400"
+        >
+          전체 <span className="tabular-nums">{totalCount}</span>건 중{' '}
+          <span className="font-semibold text-neutral-800 tabular-nums dark:text-neutral-100">
+            {visibleCount}
+          </span>
+          건 표시
+          {filterActive ? (
+            <span className="ml-1.5 text-orange-600 dark:text-orange-400">
+              · 필터 적용 중
+            </span>
+          ) : null}
+        </p>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onReset}
+          disabled={!filterActive}
+          aria-label="필터 초기화"
+          className="h-8 px-3 text-xs"
+        >
+          필터 초기화
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** 필터 라벨 + 컨트롤 래퍼. 라벨 클릭으로도 컨트롤에 포커스가 가도록 `htmlFor` 사용. */
+function FilterField({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label
+        htmlFor={htmlFor}
+        className="text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400"
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function EmptyFilteredRow({ onReset }: { onReset: () => void }) {
+  return (
+    <tr>
+      <td
+        colSpan={TABLE_COLUMN_COUNT}
+        className="px-5 py-12 text-center text-sm text-neutral-500 dark:text-neutral-400"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <p>선택한 필터 조건에 해당하는 활동 데이터가 없습니다.</p>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onReset}
+            className="h-8 px-3 text-xs"
+          >
+            필터 초기화
+          </Button>
+        </div>
+      </td>
+    </tr>
   );
 }
 

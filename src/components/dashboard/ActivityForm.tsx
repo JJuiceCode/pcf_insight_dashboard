@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Button } from '@/components/ui/Button';
+import { DateInput } from '@/components/ui/DateInput';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
@@ -168,23 +169,19 @@ export function ActivityForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-1 flex-col" noValidate>
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
-        <TextField
+        <DateInput
+          id={dateId}
           label="날짜"
-          htmlFor={dateId}
           required
-          error={shouldShowError('date') ? validation.errors.date : undefined}
-        >
-          <Input
-            id={dateId}
-            type="date"
-            value={draft.date}
-            onChange={(e) =>
-              setDraft((prev) => ({ ...prev, date: e.target.value }))
-            }
-            onBlur={markTouched('date')}
-            hasError={shouldShowError('date')}
-          />
-        </TextField>
+          value={draft.date}
+          onChange={(nextValue) =>
+            setDraft((prev) => ({ ...prev, date: nextValue }))
+          }
+          onBlur={markTouched('date')}
+          invalid={shouldShowError('date')}
+          errorMessage={shouldShowError('date') ? validation.errors.date : null}
+          hint="활동 날짜를 선택하거나 직접 입력해 주세요. (형식: YYYY-MM-DD)"
+        />
 
         <TextField
           label="활동 유형"

@@ -1,16 +1,15 @@
 /**
  * 대시보드 UI에 필요한 파생 지표를 한 곳에서 계산한다.
  *
- * `calculations.ts`는 순수 도메인 집계만 담당하고,
- * 이 모듈은 라벨 포맷·비율·dominant scope 같은
- * UI 친화적인 파생값을 한 번에 만들어 클라이언트 컴포넌트가
- * 단일 진입점(`buildDashboardMetrics`)으로 재계산할 수 있게 한다.
+ * 입력은 이미 활성 계수가 적용된 `CalculatedEmissionRow[]`이다.
+ * 계수 매칭(활동 시점·effective 기간 비교)은 service 레이어에서 끝낸 뒤
+ * 같은 입력으로 KPI·Scope·월별·테이블을 동시에 만들어 화면 간 수치가
+ * 어긋나지 않도록 한다.
  */
 
 import {
   ACTIVITY_TYPES,
   GHG_SCOPES,
-  calculateActivityRowsWithEmissions,
   calculateEmissionsByActivityType,
   calculateEmissionsByMonth,
   calculateEmissionsByScope,
@@ -21,11 +20,7 @@ import {
   type TopContributor,
 } from './calculations';
 import { formatActivityTypeLabel, formatScopeLabel } from './formatters';
-import type {
-  ActivityRecord,
-  CalculatedEmissionRow,
-  EmissionFactor,
-} from './types';
+import type { CalculatedEmissionRow } from './types';
 
 export interface EmissionBreakdownRow {
   /** 표시용 한글 라벨 (예: "전기", "Scope 2"). */
@@ -58,28 +53,22 @@ export function shareOfTotal(part: number, total: number): number {
 }
 
 /**
- * 활동 레코드와 배출계수로부터 대시보드 전체 지표를 한 번에 만든다.
+ * 활성 계수가 적용된 활동 행에서 대시보드 전체 지표를 한 번에 만든다.
  *
  * 재계산 흐름:
- *   activityRecords 변경 → buildDashboardMetrics → KPI·개요·테이블 동시 동기화
- *
- * 모든 표시 데이터가 같은 입력에서 파생되므로,
- * 제출 직후에도 화면 간 수치가 어긋나지 않는다.
+ *   계수 또는 활동 변경 → 서비스가 새 rows 생성 → buildDashboardMetrics
+ *     → KPI·개요·테이블 동시 동기화
  */
 export function buildDashboardMetrics(
-  activityRecords: readonly ActivityRecord[],
-  emissionFactors: readonly EmissionFactor[],
+  rows: readonly CalculatedEmissionRow[],
 ): DashboardMetrics {
-  const rows = calculateActivityRowsWithEmissions(
-    activityRecords,
-    emissionFactors,
-  );
-  const totalKgCO2e = calculateTotalEmissions(rows);
-  const byActivityType = calculateEmissionsByActivityType(rows);
-  const byScope = calculateEmissionsByScope(rows);
-  const monthlyEmissions = calculateEmissionsByMonth(rows);
-  const topContributor = calculateTopContributor(rows);
-  const peakMonth = calculatePeakMonth(rows);
+  const writableRows = [...rows];
+  const totalKgCO2e = calculateTotalEmissions(writableRows);
+  const byActivityType = calculateEmissionsByActivityType(writableRows);
+  const byScope = calculateEmissionsByScope(writableRows);
+  const monthlyEmissions = calculateEmissionsByMonth(writableRows);
+  const topContributor = calculateTopContributor(writableRows);
+  const peakMonth = calculatePeakMonth(writableRows);
 
   const activityTypeRows: EmissionBreakdownRow[] = ACTIVITY_TYPES.map(
     (type) => ({
@@ -100,7 +89,7 @@ export function buildDashboardMetrics(
   );
 
   return {
-    rows,
+    rows: writableRows,
     totalKgCO2e,
     dominantScopeSharePercent: shareOfTotal(
       dominantScope.emissionKgCO2e,

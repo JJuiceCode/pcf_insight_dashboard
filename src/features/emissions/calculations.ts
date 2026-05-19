@@ -1,110 +1,23 @@
 /**
- * 제품 탄소발자국(PCF) 대시보드용 순수 계산 유틸.
+ * 제품 탄소발자국(PCF) 대시보드용 순수 집계 유틸.
  *
- * 계산 흐름:
- *   활동 데이터
- *     → 배출계수 매칭
- *     → 배출량 계산 (활동량 × 계수)
- *     → GHG Scope 분류
- *     → 집계 (합계, 활동 유형별, Scope별, 월별)
+ * 이 파일은 활동·계수 매칭이 끝난 결과(`CalculatedEmissionRow[]`)만 입력으로 받고,
+ * 합계·카테고리·월별·기여도 집계만 담당한다. 활성 계수 선택과 매칭 규칙은
+ * `services/emissionCalculationService.ts`와 `services/emissionFactorService.ts`에 있다.
  *
  * 설계 규칙:
  *  - 내부 숫자는 모두 kgCO2e. tCO2e 변환은 포맷터에서 처리한다.
- *  - 활동과 배출계수는 계산 시점에 매칭한다(저장 시 합치지 않음).
- *    실무에서도 계수 버전과 활동 데이터를 따로 관리하기 때문이다.
  *  - 함수는 순수 함수다. 입력을 바꾸지 않고 외부 상태를 읽지 않는다.
- *  - 배출계수가 없는 행은 `isValid: false`로 남기되,
- *    집계 합계에는 포함하지 않는다. UI에서 품질 이슈를 보여주기 위함이다.
+ *  - `isValid: false` 행은 합계에서 제외해 잘못된 0이 섞이지 않게 한다.
  */
 
 import {
   ACTIVITY_TYPES,
   GHG_SCOPES,
-  type ActivityRecord,
   type ActivityType,
   type CalculatedEmissionRow,
-  type EmissionFactor,
   type GhgScope,
 } from './types';
-
-/**
- * 활동 유형과 설명 값을 기준으로 배출계수를 찾는다.
- *
- * 입력 폼 미리보기와 계산 로직이 동일한 매칭 규칙을 사용하도록 공통 유틸로 분리한다.
- * 현재 시드 데이터는 `activityType + description` 조합으로 매칭하며,
- * 실제 서비스에서는 ID, 카탈로그, 적용 기간 등을 함께 고려할 수 있다.
- */
-export function findEmissionFactorByKey(
-  activityType: ActivityType,
-  description: string,
-  emissionFactors: readonly EmissionFactor[],
-): EmissionFactor | undefined {
-  return emissionFactors.find(
-    (factor) =>
-      factor.activityType === activityType && factor.name === description,
-  );
-}
-
-/** `ActivityRecord` 기반 배출계수 조회. */
-export function findEmissionFactorForActivity(
-  activity: ActivityRecord,
-  emissionFactors: readonly EmissionFactor[],
-): EmissionFactor | undefined {
-  return findEmissionFactorByKey(
-    activity.activityType,
-    activity.description,
-    emissionFactors,
-  );
-}
-
-/**
- * 활동 레코드 한 건의 배출량을 계산한다.
- *
- * 유효한 경우 계수를 찾아 배출량을 계산하고,
- * 유효하지 않은 경우 배출량 0과 `errorMessage`를 채운다.
- * 계수 누락으로 생긴 0이 합계에 섞이지 않도록 명시적으로 구분한다.
- */
-export function calculateActivityEmission(
-  activity: ActivityRecord,
-  emissionFactors: readonly EmissionFactor[],
-): CalculatedEmissionRow {
-  const matchedFactor = findEmissionFactorForActivity(
-    activity,
-    emissionFactors,
-  );
-
-  if (!matchedFactor) {
-    return {
-      activity,
-      emissionKgCO2e: 0,
-      isValid: false,
-      errorMessage: `배출계수를 찾을 수 없습니다 (활동유형 "${activity.activityType}", 설명 "${activity.description}").`,
-    };
-  }
-
-  const emissionKgCO2e = activity.amount * matchedFactor.factor;
-
-  return {
-    activity,
-    emissionFactor: matchedFactor,
-    emissionKgCO2e,
-    scope: matchedFactor.scope,
-    isValid: true,
-  };
-}
-
-/**
- * 모든 활동 레코드에 배출 계산을 적용한다.
- * 입력 순서를 유지해 UI가 활동별 테이블을 다시 정렬하지 않아도 된다.
- */
-export function calculateActivityRowsWithEmissions(
-  activityRecords: readonly ActivityRecord[],
-  emissionFactors: readonly EmissionFactor[],
-): CalculatedEmissionRow[] {
-  return activityRecords.map((activity) =>
-    calculateActivityEmission(activity, emissionFactors),
-  );
-}
 
 /** 유효한 행만 합산한 총 kgCO2e. 유효하지 않은 행은 제외한다. */
 export function calculateTotalEmissions(

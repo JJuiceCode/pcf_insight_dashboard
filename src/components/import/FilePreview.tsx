@@ -15,9 +15,14 @@ export interface FilePreviewProps {
    * 운영자가 잘못 선택한 파일을 빠르게 취소할 수 있게 하기 위함이다.
    */
   onClear?: () => void;
+  /**
+   * 가져오기 진행 중에는 "선택 해제" 버튼을 잠가 중복 조작을 차단한다.
+   * 카드 자체는 계속 표시해 사용자에게 어떤 파일이 처리 중인지 알려준다.
+   */
+  disabled?: boolean;
 }
 
-export function FilePreview({ file, onClear }: FilePreviewProps) {
+export function FilePreview({ file, onClear, disabled = false }: FilePreviewProps) {
   return (
     <Card aria-labelledby="file-preview-title" className="space-y-3">
       <div className="flex items-center justify-between gap-3">
@@ -40,7 +45,11 @@ export function FilePreview({ file, onClear }: FilePreviewProps) {
       </div>
 
       {file ? (
-        <SelectedFileSummary file={file} onClear={onClear} />
+        <SelectedFileSummary
+          file={file}
+          onClear={onClear}
+          clearDisabled={disabled}
+        />
       ) : (
         <EmptyState />
       )}
@@ -51,9 +60,11 @@ export function FilePreview({ file, onClear }: FilePreviewProps) {
 function SelectedFileSummary({
   file,
   onClear,
+  clearDisabled,
 }: {
   file: File;
   onClear?: () => void;
+  clearDisabled?: boolean;
 }) {
   const extension = getFileExtension(file.name);
 
@@ -86,6 +97,7 @@ function SelectedFileSummary({
           type="button"
           variant="ghost"
           onClick={onClear}
+          disabled={clearDisabled}
           className="h-8 px-2 text-xs"
           aria-label="선택한 파일 해제"
         >

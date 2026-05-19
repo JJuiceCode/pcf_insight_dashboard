@@ -112,12 +112,14 @@ prisma/
 
 # Next Steps
 
-- [ ] Add filtering to ActivityTable
+- [x] Add filtering to ActivityTable
 
-- [ ] Add sorting to ActivityTable
+- [x] Add sorting to ActivityTable
 
-- [ ] Step 11: Excel upload interface
+- [x] Step 10: Excel upload interface
 
-- [ ] Step 12: Parse uploaded Excel and import into database
+- [x] Step 11-A: Excel parsing + ActivityRecord DB import
 
-- [ ] Step 13: Recalculate dashboard from imported DB data
+- [ ] Step 11-B: Connect Excel upload UI to import API
+
+- [ ] Step 12: Recalculate dashboard from imported DB data

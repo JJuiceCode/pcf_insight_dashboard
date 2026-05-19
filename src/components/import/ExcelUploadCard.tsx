@@ -32,6 +32,11 @@ export interface ExcelUploadCardProps {
   onInvalidFile?: (reason: string) => void;
   /** 외부에서 표시할 에러 메시지(없으면 인라인 에러를 숨긴다). */
   errorMessage?: string | null;
+  /**
+   * 업로드 중에는 파일 재선택과 드롭을 차단한다.
+   * 중복 제출이나 import 도중 파일 교체로 인한 혼란을 막기 위함이다.
+   */
+  disabled?: boolean;
 }
 
 const ACCEPTED_EXTENSIONS = ['.xlsx', '.xls'] as const;
@@ -44,16 +49,19 @@ export function ExcelUploadCard({
   onFileSelected,
   onInvalidFile,
   errorMessage,
+  disabled = false,
 }: ExcelUploadCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const openFileDialog = useCallback(() => {
+    if (disabled) return;
     inputRef.current?.click();
-  }, []);
+  }, [disabled]);
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
+      if (disabled) return;
       if (!files || files.length === 0) return;
       // 다중 선택을 허용하지 않으므로 첫 번째 파일만 사용한다.
       const file = files[0];
@@ -63,7 +71,7 @@ export function ExcelUploadCard({
       }
       onFileSelected(file);
     },
-    [onFileSelected, onInvalidFile],
+    [disabled, onFileSelected, onInvalidFile],
   );
 
   const handleInputChange = useCallback(
@@ -75,18 +83,29 @@ export function ExcelUploadCard({
     [handleFiles],
   );
 
-  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    event.dataTransfer.dropEffect = 'copy';
-    setIsDragging(true);
-  }, []);
+  const handleDragOver = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (disabled) {
+        event.dataTransfer.dropEffect = 'none';
+        return;
+      }
+      event.dataTransfer.dropEffect = 'copy';
+      setIsDragging(true);
+    },
+    [disabled],
+  );
 
-  const handleDragEnter = useCallback((event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDragging(true);
-  }, []);
+  const handleDragEnter = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (disabled) return;
+      setIsDragging(true);
+    },
+    [disabled],
+  );
 
   const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -116,6 +135,7 @@ export function ExcelUploadCard({
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      aria-disabled={disabled || undefined}
       className={cn(
         'flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed bg-white px-6 py-12 text-center transition-colors sm:py-16 dark:bg-neutral-900',
         isDragging
@@ -123,6 +143,7 @@ export function ExcelUploadCard({
           : hasError
             ? 'border-red-300 dark:border-red-500/60'
             : 'border-neutral-300 dark:border-neutral-700',
+        disabled && 'cursor-not-allowed opacity-60',
       )}
     >
       <UploadIcon active={isDragging} />
@@ -145,7 +166,12 @@ export function ExcelUploadCard({
         ) : null}
       </div>
 
-      <Button type="button" variant="primary" onClick={openFileDialog}>
+      <Button
+        type="button"
+        variant="primary"
+        onClick={openFileDialog}
+        disabled={disabled}
+      >
         파일 선택
       </Button>
 
@@ -156,6 +182,7 @@ export function ExcelUploadCard({
         className="sr-only"
         onChange={handleInputChange}
         aria-label="Excel 파일 선택"
+        disabled={disabled}
       />
 
       {hasError ? (

@@ -93,7 +93,7 @@ export function buildColumnIndexMap(headerRow: ReadonlyArray<unknown>): {
   for (const column of REQUIRED_COLUMNS) {
     const aliases = COLUMN_ALIASES[column].map(normalizeLabel);
     const index = normalizedHeaders.findIndex((header) =>
-      aliases.includes(header),
+      headerMatchesAnyAlias(header, aliases),
     );
     if (index === -1) {
       missing.push(column);
@@ -108,6 +108,38 @@ export function buildColumnIndexMap(headerRow: ReadonlyArray<unknown>): {
 
   return { map: partial as ColumnIndexMap, missing: [] };
 }
+
+/**
+ * 정규화된 헤더 셀이 별칭 중 하나와 일치하는지 판정한다.
+ *
+ *  - 정확히 같으면 매칭
+ *  - 별칭이 헤더의 접두어이고 그 뒤가 분리 문자(공백·`-`·`_`·`.` 등)면 매칭
+ *
+ * "일자 원본 데이터", "일자_원본" 처럼 동일 컬럼임에도 부가 설명이
+ * 붙은 변형을 흡수하기 위함이다. 단순히 substring 비교를 쓰면
+ * `일자단위`처럼 다른 단어와 혼동될 수 있어, 뒤따라오는 문자가
+ * 글자/숫자가 아니어야 한다는 조건으로 false positive를 막는다.
+ */
+function headerMatchesAnyAlias(
+  normalizedHeader: string,
+  normalizedAliases: readonly string[],
+): boolean {
+  if (!normalizedHeader) return false;
+  for (const alias of normalizedAliases) {
+    if (!alias) continue;
+    if (normalizedHeader === alias) return true;
+    if (normalizedHeader.startsWith(alias)) {
+      const next = normalizedHeader.charAt(alias.length);
+      if (next === '' || !LETTER_OR_DIGIT.test(next)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Unicode 글자/숫자 판별. 한글·한자도 letter로 인식돼 `일자단위` 같은 결합어를 끊지 않는다. */
+const LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
 
 export interface ParsedActivityRow {
   productId: string;
@@ -221,13 +253,34 @@ export function findActivityHeaderRow(
 }
 
 /**
+ * 헤더의 활동 컬럼이 차지하는 인덱스 범위(닫힌 구간)를 돌려준다.
+ *
+ * 평가용 엑셀처럼 활동 데이터 블록과 배출계수 참고표가 **세로가 아니라 가로로 나란히**
+ * 놓여 있는 경우에도, 활동 영역만 깔끔히 분리해 처리할 수 있게 한다.
+ * 예: 활동 헤더 인덱스가 {0,1,2,3,4}면 컬럼 0~4까지만 활동 영역으로 본다.
+ */
+export function getActivityColumnRange(indexMap: ColumnIndexMap): {
+  start: number;
+  end: number;
+} {
+  const indices = Object.values(indexMap);
+  return {
+    start: Math.min(...indices),
+    end: Math.max(...indices),
+  };
+}
+
+/**
  * 활동 데이터 블록이 끝났다고 판단되는 행인지 검사한다.
  *
+ * 활동 영역(`indexMap`이 가리키는 컬럼 범위) 안에서만 판단한다.
+ * 옆에 함께 놓인 배출계수 참고표 컬럼은 절대 보지 않는다.
+ *
  * 멈춤 조건:
- *  1) 완전히 비어 있는 행 — 보통 블록 구분용 빈 줄
- *  2) 어느 한 셀이 `배출계수` 같은 다음 섹션 표식 문자열을 포함
+ *  1) 활동 영역의 모든 셀이 비어 있음 — 보통 블록 구분용 빈 줄
+ *  2) 활동 영역의 어떤 셀이 `배출계수` 같은 다음 섹션 표식 문자열을 포함
  *  3) 활동 식별의 핵심 컬럼(날짜·활동 유형) 어느 쪽도 활동 데이터처럼 보이지 않음
- *     → 다음 블록의 새로운 헤더 행(예: `항목 | 계수 | 단위`)으로 간주
+ *     → 다음 활동 블록의 새 헤더 행으로 간주
  *
  * 단일 행 검증 실패(예: 날짜 오타)는 여기서 끝으로 보지 않는다.
  * 그런 경우는 `parseActivityRow`가 `skip`을 반환해 `skippedCount`로 집계된다.
@@ -236,9 +289,12 @@ export function isActivityBlockEnd(
   cells: ReadonlyArray<unknown>,
   indexMap: ColumnIndexMap,
 ): boolean {
-  if (isEmptyRow(cells)) return true;
+  const { start, end } = getActivityColumnRange(indexMap);
+  const activitySlice = cells.slice(start, end + 1);
 
-  if (containsSectionMarker(cells)) return true;
+  if (isEmptyRow(activitySlice)) return true;
+
+  if (containsSectionMarker(activitySlice)) return true;
 
   const dateCell = cells[indexMap.date];
   const typeCell = cells[indexMap.activityType];
@@ -297,17 +353,21 @@ function hasActivityTypeShape(value: unknown): boolean {
 }
 
 /**
- * 헤더 라벨을 비교 가능한 형태로 정규화한다.
+ * 헤더·셀 라벨을 비교 가능한 형태로 정규화한다.
  *
- *  - 괄호 안 주석을 제거: `일자(원본)` → `일자`, `Activity Type (필수)` → `activity type`
- *  - 연속 공백 1칸으로 압축, 양끝 공백 제거
- *  - 영문은 소문자로 통일
+ *  - 괄호 안 주석을 제거 (반각·전각 모두):
+ *    `일자(원본)` → `일자`, `일자（원본 데이터）` → `일자`, `활동 유형 (필수)` → `활동 유형`
+ *  - 보이지 않는 공백(NBSP, 전각 공백, zero-width 시리즈)을 일반 공백으로 변환
+ *  - 연속 공백을 1칸으로 압축, 양끝 공백 제거
+ *  - 영문은 소문자로 통일 (한글은 대소문자가 없어 무영향)
  *
- * 한글은 대소문자 개념이 없어 영향이 없다.
+ * 실제 한국어 엑셀에서 자주 마주치는 변형을 흡수하기 위한 한 곳의 정규화 지점이다.
+ * 새로운 변형이 발견되면 이 함수만 손보면 된다.
  */
 function normalizeLabel(value: string): string {
   return value
-    .replace(/\([^)]*\)/g, '')
+    .replace(/[\(（][^)）]*[\)）]/g, '')
+    .replace(/[\u00A0\u3000\u200B\u200C\u200D\uFEFF]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();

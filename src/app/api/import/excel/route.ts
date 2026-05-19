@@ -57,6 +57,9 @@ export async function POST(request: Request): Promise<Response> {
     if (error instanceof ExcelImportError) {
       return errorResponse(error.code, error.message, 400, {
         missingColumns: error.missingColumns ?? null,
+        // 헤더 탐색 실패 시 운영자가 실제 시트가 어떻게 들어왔는지 한눈에 보고
+        // 라벨 차이를 빠르게 판단할 수 있도록 상단 행 미리보기를 함께 돌려준다.
+        headerSamples: error.headerSamples ?? null,
       });
     }
     // 정의되지 않은 오류는 그대로 위로 던져 Next.js의 표준 500 처리를 따른다.

@@ -26,6 +26,7 @@ import {
   findActivityHeaderRow,
   isActivityBlockEnd,
   parseActivityRow,
+  type ColumnIndexMap,
   type ParsedActivityRow,
 } from '../mappers/excelActivityMapper';
 import type { ExcelImportResult } from '../types';
@@ -41,17 +42,24 @@ export type ExcelImportErrorCode =
  *
  * route handler는 이 에러를 잡아 400 응답으로 변환한다.
  * 단일 행 오류는 여기서 throw하지 않는다.
+ *
+ * `headerSamples`는 헤더 탐색에 실패했을 때 운영자가 실제 시트의 행이
+ * 어떻게 생겼는지 한눈에 보고 라벨 차이를 추정할 수 있도록 첨부한다.
  */
 export class ExcelImportError extends Error {
   constructor(
     public readonly code: ExcelImportErrorCode,
     message: string,
     public readonly missingColumns?: readonly string[],
+    public readonly headerSamples?: readonly string[],
   ) {
     super(message);
     this.name = 'ExcelImportError';
   }
 }
+
+const HEADER_SAMPLE_ROWS = 5;
+const isDev = process.env.NODE_ENV !== 'production';
 
 export interface ImportExcelActivitiesParams {
   /** 업로드된 파일의 raw 바이트. route handler에서 `await file.arrayBuffer()`로 얻는다. */
@@ -65,38 +73,30 @@ export async function importExcelActivities(
 ): Promise<ExcelImportResult> {
   const workbook = readWorkbook(params.buffer);
 
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) {
+  if (workbook.SheetNames.length === 0) {
     throw new ExcelImportError('no-sheet', '워크시트를 찾을 수 없습니다.');
   }
-  const sheet = workbook.Sheets[sheetName];
 
-  // header: 1 옵션으로 각 행을 셀 배열로 받는다. 헤더 정규화를 매퍼에서 직접 처리하기 위함이다.
-  // blankrows: true로 빈 행 위치를 보존해, 활동 블록과 다음 섹션 사이의 빈 줄을
-  // 명시적 종료 신호로 활용할 수 있게 한다.
-  const aoa = XLSX.utils.sheet_to_json<ReadonlyArray<unknown>>(sheet, {
-    header: 1,
-    defval: null,
-    raw: true,
-    blankrows: true,
-  });
-
-  if (aoa.length === 0) {
-    throw new ExcelImportError('empty-sheet', '시트에 데이터가 없습니다.');
-  }
-
-  // 평가용 엑셀은 한 시트에 활동 데이터 + 배출계수 참고표가 함께 들어 있다.
-  // 헤더가 첫 줄이 아닐 수 있으므로 시트를 스캔해 활동 데이터 헤더의 위치를 찾는다.
-  const headerLocation = findActivityHeaderRow(aoa);
-  if (!headerLocation.found) {
+  // 평가용 엑셀은 첫 시트가 "과제 개요"(설명 문서)이고, 활동 데이터는
+  // 별도 시트에 들어 있다. 워크북의 시트를 순서대로 스캔해 활동 헤더가 발견되는
+  // 첫 시트를 채택한다. 시트 순서가 바뀌거나 새 시트가 추가되어도 영향이 없다.
+  const located = locateActivitySheet(workbook);
+  if (!located) {
     throw new ExcelImportError(
       'missing-columns',
-      `활동 데이터 컬럼이 누락되었습니다: ${headerLocation.missing.join(', ')}`,
-      headerLocation.missing,
+      '엑셀 파일에서 활동 데이터 컬럼이 있는 시트를 찾을 수 없습니다.',
+      undefined,
+      collectAllSheetsHeaderSamples(workbook),
     );
   }
-  const indexMap = headerLocation.indexMap;
-  const dataRows = aoa.slice(headerLocation.rowIndex + 1);
+
+  const { sheetName, aoa, headerRowIndex, indexMap } = located;
+  const dataRows = aoa.slice(headerRowIndex + 1);
+
+  if (isDev) {
+    console.log('[excel-import] selected sheet:', sheetName);
+    console.log(`[excel-import] header at row ${headerRowIndex} →`, indexMap);
+  }
 
   // 1) 활동 블록 끝(빈 행 / `배출계수` 섹션 / 비활동 행 형태)에서 멈추고
   //    그 전까지의 행만 도메인 형태로 정규화한다. 잘못된 단일 행은 skip으로 집계.
@@ -121,7 +121,9 @@ export async function importExcelActivities(
 
   // 2) 중복 감지. DB 기존 키 + 같은 import 내 중복을 동시에 차단한다.
   const existingKeys = await findActivityKeysByProductId(params.productId);
-  const seenKeys = new Set<string>(existingKeys.map(activityCompositeKeyFromDb));
+  const seenKeys = new Set<string>(
+    existingKeys.map(activityCompositeKeyFromDb),
+  );
 
   const toInsert: CreateActivityInput[] = [];
   let duplicateCount = 0;
@@ -194,4 +196,103 @@ function canonicalizeAmount(amount: number): string {
   // 부동소수점 표시 차이를 줄이기 위해 정해진 자리수로 직렬화한다.
   // 활동량은 일반적으로 정수~소수점 2~3자리 수준이라 6자리면 충분히 안전하다.
   return Number.isFinite(amount) ? amount.toFixed(6) : 'NaN';
+}
+
+/**
+ * 워크북의 모든 시트를 순서대로 스캔해 활동 데이터 헤더가 있는 첫 시트를 찾는다.
+ *
+ * 평가용 엑셀처럼 첫 시트가 안내 문서이고 데이터 시트가 뒤에 있어도,
+ * `과제용 데이터` 같은 이름을 하드코딩하지 않고 헤더 매칭만으로 자동 선택한다.
+ *
+ * 발견 실패 시 `null`을 돌려주고, 호출 측에서 진단 정보를 모아 에러로 변환한다.
+ */
+function locateActivitySheet(workbook: XLSX.WorkBook): {
+  sheetName: string;
+  aoa: ReadonlyArray<ReadonlyArray<unknown>>;
+  headerRowIndex: number;
+  indexMap: ColumnIndexMap;
+} | null {
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+
+    const aoa = readSheetAsAoa(sheet);
+    if (aoa.length === 0) continue;
+
+    const headerLocation = findActivityHeaderRow(aoa);
+
+    if (isDev) {
+      console.log(`[excel-import] scanning sheet "${sheetName}"...`);
+      for (let i = 0; i < Math.min(HEADER_SAMPLE_ROWS, aoa.length); i += 1) {
+        console.log(`[excel-import]   row[${i}]:`, formatRowForLog(aoa[i]));
+      }
+      if (headerLocation.found) {
+        console.log(
+          `[excel-import]   ✓ header at row ${headerLocation.rowIndex}`,
+        );
+      } else {
+        console.log(
+          '[excel-import]   ✗ header missing:',
+          headerLocation.missing,
+        );
+      }
+    }
+
+    if (headerLocation.found) {
+      return {
+        sheetName,
+        aoa,
+        headerRowIndex: headerLocation.rowIndex,
+        indexMap: headerLocation.indexMap,
+      };
+    }
+  }
+  return null;
+}
+
+/** 단일 시트를 활동 영역 파싱용 array-of-arrays로 변환한다. */
+function readSheetAsAoa(
+  sheet: XLSX.WorkSheet,
+): ReadonlyArray<ReadonlyArray<unknown>> {
+  return XLSX.utils.sheet_to_json<ReadonlyArray<unknown>>(sheet, {
+    header: 1,
+    defval: null,
+    raw: true,
+    blankrows: true,
+  });
+}
+
+/**
+ * 헤더 탐색이 실패했을 때 운영자에게 함께 돌려줄 시트 미리보기.
+ *
+ * 모든 시트의 상단 몇 행을 보여줘, 어느 시트에 활동 데이터가 있는지
+ * 또는 헤더 라벨이 어떻게 다른지를 한눈에 진단할 수 있다.
+ * 너무 길어지지 않도록 시트당 행 수와 셀 길이를 모두 잘라낸다.
+ */
+function collectAllSheetsHeaderSamples(workbook: XLSX.WorkBook): string[] {
+  const samples: string[] = [];
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const aoa = readSheetAsAoa(sheet);
+    samples.push(`[sheet] ${sheetName}`);
+    for (let i = 0; i < Math.min(HEADER_SAMPLE_ROWS, aoa.length); i += 1) {
+      samples.push(`  row[${i}]: ${formatRowForLog(aoa[i])}`);
+    }
+  }
+  return samples;
+}
+
+function formatRowForLog(cells: ReadonlyArray<unknown>): string {
+  return cells
+    .map((cell) => {
+      if (cell === null || cell === undefined) return '∅';
+      if (cell instanceof Date) return cell.toISOString().slice(0, 10);
+      if (typeof cell === 'string') {
+        const trimmed = cell.length > 40 ? `${cell.slice(0, 40)}…` : cell;
+        return JSON.stringify(trimmed);
+      }
+      return String(cell);
+    })
+    .join(' | ');
 }

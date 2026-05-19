@@ -23,8 +23,8 @@ import {
   type CreateActivityInput,
 } from '../repositories/activityRepository';
 import {
-  buildColumnIndexMap,
-  isEmptyRow,
+  findActivityHeaderRow,
+  isActivityBlockEnd,
   parseActivityRow,
   type ParsedActivityRow,
 } from '../mappers/excelActivityMapper';
@@ -72,34 +72,43 @@ export async function importExcelActivities(
   const sheet = workbook.Sheets[sheetName];
 
   // header: 1 옵션으로 각 행을 셀 배열로 받는다. 헤더 정규화를 매퍼에서 직접 처리하기 위함이다.
+  // blankrows: true로 빈 행 위치를 보존해, 활동 블록과 다음 섹션 사이의 빈 줄을
+  // 명시적 종료 신호로 활용할 수 있게 한다.
   const aoa = XLSX.utils.sheet_to_json<ReadonlyArray<unknown>>(sheet, {
     header: 1,
     defval: null,
     raw: true,
-    blankrows: false,
+    blankrows: true,
   });
 
   if (aoa.length === 0) {
     throw new ExcelImportError('empty-sheet', '시트에 데이터가 없습니다.');
   }
 
-  const [headerRow, ...dataRows] = aoa;
-  const { map: indexMap, missing } = buildColumnIndexMap(headerRow);
-  if (!indexMap) {
+  // 평가용 엑셀은 한 시트에 활동 데이터 + 배출계수 참고표가 함께 들어 있다.
+  // 헤더가 첫 줄이 아닐 수 있으므로 시트를 스캔해 활동 데이터 헤더의 위치를 찾는다.
+  const headerLocation = findActivityHeaderRow(aoa);
+  if (!headerLocation.found) {
     throw new ExcelImportError(
       'missing-columns',
-      `활동 데이터 컬럼이 누락되었습니다: ${missing.join(', ')}`,
-      missing,
+      `활동 데이터 컬럼이 누락되었습니다: ${headerLocation.missing.join(', ')}`,
+      headerLocation.missing,
     );
   }
+  const indexMap = headerLocation.indexMap;
+  const dataRows = aoa.slice(headerLocation.rowIndex + 1);
 
-  // 1) 행 단위 정규화. 잘못된 행은 skip으로 집계만 한다.
+  // 1) 활동 블록 끝(빈 행 / `배출계수` 섹션 / 비활동 행 형태)에서 멈추고
+  //    그 전까지의 행만 도메인 형태로 정규화한다. 잘못된 단일 행은 skip으로 집계.
   const parsedRows: ParsedActivityRow[] = [];
   let invalidRowCount = 0;
   let nonEmptyRowCount = 0;
 
   for (const cells of dataRows) {
-    if (isEmptyRow(cells)) continue;
+    if (isActivityBlockEnd(cells, indexMap)) {
+      // 활동 블록이 끝났으므로 이후 행(예: 배출계수 참고표)은 가져오기 대상에서 제외한다.
+      break;
+    }
     nonEmptyRowCount += 1;
 
     const result = parseActivityRow(cells, indexMap, params.productId);

@@ -23,7 +23,12 @@ const REQUIRED_COLUMNS = [
 
 export type RequiredColumn = (typeof REQUIRED_COLUMNS)[number];
 
-/** 헤더 라벨 매칭 시 정규화에 사용되는 별칭 사전. */
+/**
+ * 헤더 라벨 매칭 시 정규화에 사용되는 별칭 사전.
+ *
+ * `normalizeLabel`이 괄호 주석을 잘라내므로 `일자(원본)`, `활동 유형(필수)`처럼
+ * 같은 의미에 부가 주석이 붙은 변형은 자동으로 흡수된다.
+ */
 const COLUMN_ALIASES: Record<RequiredColumn, readonly string[]> = {
   date: ['date', 'activity date', 'activitydate', '일자', '날짜', '활동일'],
   activityType: [
@@ -48,6 +53,9 @@ const COLUMN_ALIASES: Record<RequiredColumn, readonly string[]> = {
   ],
   unit: ['unit', '단위'],
 };
+
+/** 활동 블록 다음에 이어지는 참고용 섹션을 알리는 셀 문구. */
+const NON_ACTIVITY_SECTION_MARKERS: readonly string[] = ['배출계수'];
 
 /** 한글·영문 라벨을 도메인 활동 유형으로 매핑한다. */
 const ACTIVITY_TYPE_ALIASES: Record<ActivityType, readonly string[]> = {
@@ -178,8 +186,131 @@ export function isEmptyRow(cells: ReadonlyArray<unknown>): boolean {
   );
 }
 
+/**
+ * 활동 데이터 헤더 행의 위치를 시트 내에서 동적으로 찾는다.
+ *
+ * 평가용 엑셀처럼 같은 시트에 "활동 데이터 블록 + 배출계수 참고표"가 함께 있을 수 있다.
+ * 헤더가 항상 첫 줄이라고 가정하지 않고, 모든 필수 컬럼을 가진 첫 행을 헤더로 본다.
+ *
+ * 발견하지 못한 경우 `missing`은 가장 가까웠던 후보(매칭 실패가 가장 적었던 행)의
+ * 누락 컬럼이거나 전체 필수 컬럼 목록이다. 호출 측 에러 메시지에서 사용한다.
+ */
+export type ActivityHeaderLocation =
+  | { found: true; rowIndex: number; indexMap: ColumnIndexMap }
+  | { found: false; missing: RequiredColumn[] };
+
+export function findActivityHeaderRow(
+  aoa: ReadonlyArray<ReadonlyArray<unknown>>,
+): ActivityHeaderLocation {
+  let bestMissing: RequiredColumn[] = [...REQUIRED_COLUMNS];
+
+  for (let i = 0; i < aoa.length; i += 1) {
+    const row = aoa[i];
+    if (isEmptyRow(row)) continue;
+
+    const { map, missing } = buildColumnIndexMap(row);
+    if (map) {
+      return { found: true, rowIndex: i, indexMap: map };
+    }
+    if (missing.length < bestMissing.length) {
+      bestMissing = missing;
+    }
+  }
+
+  return { found: false, missing: bestMissing };
+}
+
+/**
+ * 활동 데이터 블록이 끝났다고 판단되는 행인지 검사한다.
+ *
+ * 멈춤 조건:
+ *  1) 완전히 비어 있는 행 — 보통 블록 구분용 빈 줄
+ *  2) 어느 한 셀이 `배출계수` 같은 다음 섹션 표식 문자열을 포함
+ *  3) 활동 식별의 핵심 컬럼(날짜·활동 유형) 어느 쪽도 활동 데이터처럼 보이지 않음
+ *     → 다음 블록의 새로운 헤더 행(예: `항목 | 계수 | 단위`)으로 간주
+ *
+ * 단일 행 검증 실패(예: 날짜 오타)는 여기서 끝으로 보지 않는다.
+ * 그런 경우는 `parseActivityRow`가 `skip`을 반환해 `skippedCount`로 집계된다.
+ */
+export function isActivityBlockEnd(
+  cells: ReadonlyArray<unknown>,
+  indexMap: ColumnIndexMap,
+): boolean {
+  if (isEmptyRow(cells)) return true;
+
+  if (containsSectionMarker(cells)) return true;
+
+  const dateCell = cells[indexMap.date];
+  const typeCell = cells[indexMap.activityType];
+  if (!hasDateShape(dateCell) && !hasActivityTypeShape(typeCell)) {
+    return true;
+  }
+
+  return false;
+}
+
+function containsSectionMarker(cells: ReadonlyArray<unknown>): boolean {
+  for (const cell of cells) {
+    if (typeof cell !== 'string') continue;
+    const trimmed = cell.trim();
+    if (!trimmed) continue;
+    if (NON_ACTIVITY_SECTION_MARKERS.some((marker) => trimmed.includes(marker))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 날짜 셀로 보이는지 가벼운 형태 검사. 정확한 파싱은 `parseExcelDate`에서 수행.
+ *
+ * 활동 행 여부 판단용이라 false positive보다 false negative가 덜 위험하다.
+ * (참고 표의 첫 컬럼이 의외로 날짜 같아 보이는 경우는 거의 없음)
+ */
+function hasDateShape(value: unknown): boolean {
+  if (value instanceof Date) return !Number.isNaN(value.getTime());
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return true;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    if (/^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/.test(trimmed)) return true;
+    const ms = Date.parse(trimmed);
+    return Number.isFinite(ms);
+  }
+  return false;
+}
+
+/** 활동 유형 셀이 도메인 별칭 중 하나로 매칭되는지 확인. */
+function hasActivityTypeShape(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  const normalized = normalizeLabel(value);
+  if (!normalized) return false;
+
+  for (const aliases of Object.values(ACTIVITY_TYPE_ALIASES)) {
+    if (aliases.map(normalizeLabel).includes(normalized)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 헤더 라벨을 비교 가능한 형태로 정규화한다.
+ *
+ *  - 괄호 안 주석을 제거: `일자(원본)` → `일자`, `Activity Type (필수)` → `activity type`
+ *  - 연속 공백 1칸으로 압축, 양끝 공백 제거
+ *  - 영문은 소문자로 통일
+ *
+ * 한글은 대소문자 개념이 없어 영향이 없다.
+ */
 function normalizeLabel(value: string): string {
-  return value.replace(/\s+/g, ' ').trim().toLowerCase();
+  return value
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
 function parseActivityType(value: unknown): ActivityType | null {

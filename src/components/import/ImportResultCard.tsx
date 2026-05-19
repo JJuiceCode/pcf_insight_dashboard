@@ -41,7 +41,7 @@ function ImportSuccessCard({ result }: { result: ExcelImportResult }) {
             가져오기가 완료되었습니다
           </h3>
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            대시보드 KPI 갱신은 다음 단계에서 진행됩니다.
+            가져온 행이 아래 대시보드에 즉시 반영되었습니다.
           </p>
         </div>
         <Badge variant="success">성공</Badge>

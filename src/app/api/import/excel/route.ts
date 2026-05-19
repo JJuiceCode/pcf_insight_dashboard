@@ -1,3 +1,4 @@
+import { IMPORTED_PRODUCT_ID } from '@/features/emissions/constants';
 import {
   ExcelImportError,
   importExcelActivities,
@@ -6,18 +7,18 @@ import {
 /**
  * Excel 활동 데이터 가져오기 엔드포인트.
  *
- * 책임 범위(Step 12-A):
+ * 책임 범위:
  *  - multipart 요청에서 파일을 꺼내, 서비스에 buffer만 전달한다.
  *  - 도메인 에러(`ExcelImportError`)는 400 응답으로 매핑한다.
  *  - 파싱·정규화·DB 삽입 로직은 모두 서비스에 위임한다.
  *    route handler가 도메인 로직을 직접 알지 않게 해 책임을 분리한다.
  *
+ * 가져온 ActivityRecord는 시드와 격리하기 위해 `IMPORTED_PRODUCT_ID`로 저장한다.
+ * 같은 SQLite 테이블을 쓰지만 productId가 다르므로 `/` (시드 대시보드)와
+ * `/import` (가져오기 대시보드)가 자연스럽게 분리된다.
+ *
  * 다음 단계에서 다중 제품을 지원하면 클라이언트가 `productId`를 함께 보내도록 확장한다.
  */
-
-// 단일 제품 데모이므로 productId는 시드와 동일하게 고정한다.
-// 다음 단계에서 productId 선택 UI가 추가되면 form 필드로 받도록 바꾼다.
-const DEFAULT_PRODUCT_ID = 'product-ct-045';
 
 // Prisma·Node Buffer API를 사용하므로 Node.js 런타임으로 고정한다.
 export const runtime = 'nodejs';
@@ -50,7 +51,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const result = await importExcelActivities({
       buffer: arrayBuffer,
-      productId: DEFAULT_PRODUCT_ID,
+      productId: IMPORTED_PRODUCT_ID,
     });
     return Response.json(result);
   } catch (error) {

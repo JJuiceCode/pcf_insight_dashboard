@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import type { ExcelImportResult } from '@/features/emissions/types';
@@ -14,9 +15,11 @@ import { ImportResultCard } from './ImportResultCard';
  *  - 선택된 파일과 클라이언트 측 검증 에러를 보관한다.
  *  - "엑셀 데이터 가져오기" 버튼 클릭 시 `/api/import/excel`로 multipart 요청을 보낸다.
  *  - 서버 응답을 받아 success/error 결과 카드를 렌더링한다.
+ *  - 성공 시 `router.refresh()`로 서버 컴포넌트(`/import` 페이지)를 다시 평가시켜
+ *    아래의 imported 대시보드가 새 ActivityRecord를 반영하도록 한다.
  *
- * 이 단계(Step 11-B)에서는 결과 요약까지만 표시한다. 대시보드 데이터 소스 교체와
- * 재계산은 다음 단계로 분리되어 있어 여기서 라우터 navigation이나 refresh를 트리거하지 않는다.
+ * 대시보드 자체의 계산·렌더링은 페이지 서버 컴포넌트가 담당하므로 이 컴포넌트는
+ * 가져오기 트리거와 결과 표시에만 책임을 갖는다.
  */
 type ImportStatus =
   | { kind: 'idle' }
@@ -36,6 +39,7 @@ interface ServerErrorPayload {
 }
 
 export function ImportClient() {
+  const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [status, setStatus] = useState<ImportStatus>({ kind: 'idle' });
@@ -85,6 +89,9 @@ export function ImportClient() {
 
       const result = (await response.json()) as ExcelImportResult;
       setStatus({ kind: 'success', result });
+      // 서버 컴포넌트(`/import` page)가 다시 실행되도록 라우터 캐시를 무효화한다.
+      // 새로 적재된 ActivityRecord가 즉시 imported 대시보드 섹션에 반영된다.
+      router.refresh();
     } catch (error) {
       const message =
         error instanceof Error && error.message
@@ -92,7 +99,7 @@ export function ImportClient() {
           : '네트워크 오류로 가져오기에 실패했습니다.';
       setStatus({ kind: 'error', message });
     }
-  }, [selectedFile, isSubmitting]);
+  }, [selectedFile, isSubmitting, router]);
 
   return (
     <div className="space-y-5">

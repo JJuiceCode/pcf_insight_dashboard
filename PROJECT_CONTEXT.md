@@ -120,6 +120,6 @@ prisma/
 
 - [x] Step 11-A: Excel parsing + ActivityRecord DB import
 
-- [ ] Step 11-B: Connect Excel upload UI to import API
+- [x] Step 11-B: Connect Excel upload UI to import API
 
-- [ ] Step 12: Recalculate dashboard from imported DB data
+- [x] Step 12: Recalculate dashboard from imported DB data

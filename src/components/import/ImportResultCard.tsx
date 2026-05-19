@@ -27,6 +27,7 @@ export function ImportResultCard({ state }: ImportResultCardProps) {
 }
 
 function ImportSuccessCard({ result }: { result: ExcelImportResult }) {
+  const wasReplaced = result.replacedCount > 0;
   return (
     <Card aria-labelledby="import-result-title" className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -38,7 +39,9 @@ function ImportSuccessCard({ result }: { result: ExcelImportResult }) {
             id="import-result-title"
             className="mt-1 text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
           >
-            가져오기가 완료되었습니다
+            {wasReplaced
+              ? '기존 데이터를 새 파일로 교체했습니다'
+              : '가져오기가 완료되었습니다'}
           </h3>
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
             가져온 행이 아래 대시보드에 즉시 반영되었습니다.
@@ -59,18 +62,24 @@ function ImportSuccessCard({ result }: { result: ExcelImportResult }) {
           accent
         />
         <ResultRow
+          label="교체된 기존 행"
+          value={formatCount(result.replacedCount)}
+          muted
+        />
+        <ResultRow
           label="건너뛴 행"
           value={formatCount(result.skippedCount)}
           muted
         />
       </dl>
 
-      {result.skippedCount > 0 ? (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          건너뛴 행에는 중복으로 감지된 행과 도메인 검증을 통과하지 못한 행이
-          포함됩니다.
-        </p>
-      ) : null}
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        가져오기는 교체 방식으로 동작합니다. 같은 제품의 기존 활동 데이터는
+        새 엑셀의 행으로 완전히 대체되며, 배출계수 히스토리는 그대로 유지됩니다.
+        {result.skippedCount > 0
+          ? ' 건너뛴 행에는 같은 파일 안의 중복 행과 도메인 검증을 통과하지 못한 행이 포함됩니다.'
+          : ''}
+      </p>
     </Card>
   );
 }

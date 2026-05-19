@@ -109,36 +109,61 @@ export async function createManyActivities(
 }
 
 /**
- * 중복 감지에 사용하는 활동 식별 키.
+ * 특정 제품의 모든 활동 레코드를 삭제한다.
  *
- * (productId, activityDate, activityType, description, amount) 조합으로
- * 같은 활동을 두 번 저장하지 않도록 한다. DB에 unique 제약을 추가하는 대신
- * 서비스 레이어에서 비교하므로, 정책이 바뀌어도 스키마 마이그레이션이 필요 없다.
+ * 가져오기 화면의 replace-import 흐름에서 사용한다.
+ * `productId` 범위를 벗어난 행이나 다른 도메인(EmissionFactor 등)에는 영향을 주지 않는다.
  */
-export interface ActivityCompositeKeyRow {
-  activityType: string;
-  description: string;
-  amount: number;
-  activityDate: Date;
+export async function deleteActivitiesByProductId(
+  productId: string,
+): Promise<number> {
+  const result = await prisma.activityRecord.deleteMany({
+    where: { productId },
+  });
+  return result.count;
 }
 
 /**
- * 중복 검사용으로 특정 제품의 활동 키 컬럼만 조회한다.
+ * 특정 제품의 활동을 "원자적으로 교체"한다.
  *
- * 전체 행이 아니라 식별에 필요한 4개 컬럼만 가져와 메모리 사용을 줄인다.
- * 도메인 정제(enum 좁히기)는 수행하지 않는다. 식별이 목적이므로 raw 문자열도 그대로 비교한다.
+ * 흐름:
+ *   1. 같은 productId의 기존 ActivityRecord를 모두 삭제한다.
+ *   2. 새 행을 일괄 삽입한다.
+ *
+ * 두 작업을 단일 트랜잭션으로 묶어, 중간 실패 시 어느 쪽도 반영되지 않도록 한다.
+ * (예: 삭제 직후 insert가 실패하면 운영자가 빈 테이블을 보지 않게 한다.)
+ *
+ * EmissionFactor 테이블에는 손대지 않는다. 버전 히스토리는 그대로 유지되어,
+ * 가져온 활동이 시점에 맞는 활성 계수와 다시 매칭된다.
+ *
+ * 반환값:
+ *  - `deletedCount`: 삭제된 기존 행 수
+ *  - `insertedCount`: 새로 적재된 행 수
  */
-export async function findActivityKeysByProductId(
+export async function replaceActivitiesForProductId(
   productId: string,
-): Promise<ActivityCompositeKeyRow[]> {
-  const rows = await prisma.activityRecord.findMany({
-    where: { productId },
-    select: {
-      activityType: true,
-      description: true,
-      amount: true,
-      activityDate: true,
-    },
+  rows: readonly CreateActivityInput[],
+): Promise<{ deletedCount: number; insertedCount: number }> {
+  return prisma.$transaction(async (tx) => {
+    const deleted = await tx.activityRecord.deleteMany({
+      where: { productId },
+    });
+
+    if (rows.length === 0) {
+      return { deletedCount: deleted.count, insertedCount: 0 };
+    }
+
+    const inserted = await tx.activityRecord.createMany({
+      data: rows.map((row) => ({
+        productId: row.productId,
+        activityType: row.activityType,
+        description: row.description,
+        amount: row.amount,
+        unit: row.unit,
+        activityDate: row.activityDate,
+      })),
+    });
+
+    return { deletedCount: deleted.count, insertedCount: inserted.count };
   });
-  return rows;
 }

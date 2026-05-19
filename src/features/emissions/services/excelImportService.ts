@@ -4,22 +4,22 @@
  * 책임 분리:
  *  - workbook 디코딩 (`xlsx`)
  *  - 행 정규화 위임 (`excelActivityMapper`)
- *  - 중복 행 감지 (DB의 기존 행과 import 내부 중복 모두)
- *  - 일괄 삽입 위임 (`activityRepository.createManyActivities`)
+ *  - 같은 파일 내 중복 행 감지(같은 composite key가 두 번 등장하는 경우)
+ *  - "replace-import" 적재 위임 (`activityRepository.replaceActivitiesForProductId`)
+ *
+ * **Replace-import 정책**: 가져오기는 트랜잭션 안에서 `productId` 범위의 기존
+ * ActivityRecord를 모두 삭제한 뒤 새 행을 삽입한다. 같은 엑셀 파일을 다시 올리면
+ * 결과가 결정적이며, 운영자가 직전 가져오기를 청소하지 않아도 데이터가 누적되지 않는다.
+ * EmissionFactor 테이블은 손대지 않는다 — 버전 히스토리는 보존된다.
  *
  * 단일 행 오류로 가져오기 전체가 실패하지 않도록, 검증·중복은 `skippedCount`로 집계하고
  * 시트·파일 단위의 치명적 문제만 `ExcelImportError`로 throw 한다.
- *
- * 다음 단계(대시보드 데이터 소스 교체)에서 그대로 재사용할 수 있도록,
- * 호출 측은 `productId`를 명시적으로 전달한다.
  */
 
 import * as XLSX from 'xlsx';
 
 import {
-  createManyActivities,
-  findActivityKeysByProductId,
-  type ActivityCompositeKeyRow,
+  replaceActivitiesForProductId,
   type CreateActivityInput,
 } from '../repositories/activityRepository';
 import {
@@ -119,12 +119,10 @@ export async function importExcelActivities(
     }
   }
 
-  // 2) 중복 감지. DB 기존 키 + 같은 import 내 중복을 동시에 차단한다.
-  const existingKeys = await findActivityKeysByProductId(params.productId);
-  const seenKeys = new Set<string>(
-    existingKeys.map(activityCompositeKeyFromDb),
-  );
-
+  // 2) 파일 내부 중복 제거.
+  //    DB의 기존 행은 3)에서 트랜잭션으로 모두 삭제되기 때문에 DB 키 조회는 하지 않는다.
+  //    같은 엑셀 안에서 동일 (날짜·활동유형·설명·수량) 조합이 두 번 나오는 경우만 차단한다.
+  const seenKeys = new Set<string>();
   const toInsert: CreateActivityInput[] = [];
   let duplicateCount = 0;
 
@@ -138,12 +136,23 @@ export async function importExcelActivities(
     toInsert.push(row);
   }
 
-  // 3) 일괄 삽입.
-  const importedCount = await createManyActivities(toInsert);
+  // 3) Replace-import: 트랜잭션 안에서 기존 productId 범위를 비우고 새 행을 일괄 삽입한다.
+  //    중간 실패 시 양쪽 모두 롤백되어, 부분 삭제 상태가 노출되지 않는다.
+  const { deletedCount, insertedCount } = await replaceActivitiesForProductId(
+    params.productId,
+    toInsert,
+  );
+
+  if (isDev) {
+    console.log(
+      `[excel-import] replace-import: deleted=${deletedCount}, inserted=${insertedCount}, skipped=${duplicateCount + invalidRowCount}`,
+    );
+  }
 
   return {
-    importedCount,
+    importedCount: insertedCount,
     skippedCount: duplicateCount + invalidRowCount,
+    replacedCount: deletedCount,
     totalRows: nonEmptyRowCount,
     sheetName,
   };
@@ -168,10 +177,9 @@ function readWorkbook(
 }
 
 /**
- * 활동 행 식별 키 (productId 제외).
+ * 같은 엑셀 파일 안에서 행을 식별하는 합성 키.
  *
- * DB 조회를 productId로 한 번 좁힌 뒤 비교하므로,
- * 키에 productId를 넣지 않아도 동일 제품 내 중복을 충분히 식별할 수 있다.
+ * (productId 범위는 호출 측에서 이미 한정되므로 키에는 포함하지 않는다.)
  * 수량은 동일 자리수로 직렬화해 부동소수점 표기 차이를 흡수한다(`0.10` vs `0.1`).
  */
 function activityCompositeKey(row: {
@@ -186,10 +194,6 @@ function activityCompositeKey(row: {
     row.description.trim(),
     canonicalizeAmount(row.amount),
   ].join('|');
-}
-
-function activityCompositeKeyFromDb(row: ActivityCompositeKeyRow): string {
-  return activityCompositeKey(row);
 }
 
 function canonicalizeAmount(amount: number): string {

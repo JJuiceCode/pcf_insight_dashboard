@@ -148,8 +148,15 @@ export const ACTIVITY_TYPES: readonly ActivityType[] = [
 /**
  * Excel 활동 데이터 가져오기 결과 요약.
  *
- * - `importedCount`: 실제로 DB에 새로 저장된 행 수.
- * - `skippedCount`: 중복·검증 실패로 저장하지 않은 행 수.
+ * 가져오기는 "replace-import" 방식이다. 같은 productId의 기존 ActivityRecord는
+ * 삽입 전에 삭제되고, 새 파일의 행으로 완전히 교체된다.
+ * EmissionFactor 테이블은 손대지 않는다.
+ *
+ * - `importedCount`: 실제로 DB에 새로 적재된 행 수.
+ * - `skippedCount`: 같은 파일 내 중복 행과 도메인 검증을 통과하지 못한 행 수.
+ *   (DB 중복은 더 이상 발생하지 않는다 — 가져오기 전에 기존 행을 삭제하기 때문.)
+ * - `replacedCount`: 가져오기 전에 삭제된 기존 행 수.
+ *   `replacedCount > 0`이면 이전 가져오기 결과가 새 파일로 교체되었다는 의미.
  * - `totalRows`: 시트에서 인식된 데이터 행 수(헤더·빈 행 제외).
  *   `importedCount + skippedCount`와 일치한다.
  * - `sheetName`: 실제 파싱에 사용한 워크시트 이름. UI에서 운영자가 어떤 시트가
@@ -158,6 +165,7 @@ export const ACTIVITY_TYPES: readonly ActivityType[] = [
 export interface ExcelImportResult {
   importedCount: number;
   skippedCount: number;
+  replacedCount: number;
   totalRows: number;
   sheetName: string;
 }

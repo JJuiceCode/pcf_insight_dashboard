@@ -99,3 +99,25 @@ const SCOPE_LABEL: Record<GhgScope, string> = {
 export function formatScopeLabel(scope: GhgScope): string {
   return SCOPE_LABEL[scope];
 }
+
+/**
+ * 월 키(`YYYY-MM`)를 UI 표시용 월 라벨로 변환한다.
+ *
+ * UTC 기준으로 포맷해 SSR·브라우저 환경 간 출력 차이를 방지하고,
+ * 잘못된 입력은 원본 값을 그대로 반환한다.
+ */
+export function formatMonth(yyyymm: string): string {
+  const match = /^(\d{4})-(\d{2})$/.exec(yyyymm);
+  if (!match) return yyyymm;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return yyyymm;
+
+  const date = new Date(Date.UTC(year, month - 1, 1));
+  return new Intl.DateTimeFormat(NUMBER_LOCALE, {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}

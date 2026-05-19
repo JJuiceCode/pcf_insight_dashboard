@@ -7,7 +7,10 @@ import {
   formatNumber,
   formatScopeLabel,
 } from '@/features/emissions/formatters';
-import type { CalculatedEmissionRow } from '@/features/emissions/types';
+import type {
+  CalculatedEmissionRow,
+  EmissionFactor,
+} from '@/features/emissions/types';
 import { cn } from '@/lib/utils';
 
 /**
@@ -21,13 +24,23 @@ import { cn } from '@/lib/utils';
  */
 export interface ActivityTableProps {
   rows: readonly CalculatedEmissionRow[];
+  /**
+   * 오늘 시점에 카테고리별로 활성인 배출계수 목록.
+   * 헤더 하단의 "현재 적용 중인 배출계수" 칩 바를 렌더링하기 위해 사용한다.
+   * 비어 있으면 칩 바는 표시되지 않는다.
+   */
+  activeFactors?: readonly EmissionFactor[];
   /** 헤더의 "활동 추가" 버튼이 눌렸을 때 실행할 콜백. 없으면 버튼이 숨겨진다. */
   onAddClick?: () => void;
 }
 
 const PLACEHOLDER = '—';
 
-export function ActivityTable({ rows, onAddClick }: ActivityTableProps) {
+export function ActivityTable({
+  rows,
+  activeFactors,
+  onAddClick,
+}: ActivityTableProps) {
   const invalidCount = rows.reduce(
     (count, row) => (row.isValid ? count : count + 1),
     0,
@@ -73,6 +86,10 @@ export function ActivityTable({ rows, onAddClick }: ActivityTableProps) {
             ) : null}
           </div>
         </header>
+
+        {activeFactors && activeFactors.length > 0 ? (
+          <ActiveFactorsBar factors={activeFactors} />
+        ) : null}
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px] border-collapse text-sm">
@@ -163,6 +180,62 @@ function ActivityRow({ row }: { row: CalculatedEmissionRow }) {
         )}
       </Td>
     </tr>
+  );
+}
+
+/**
+ * 헤더 아래에 표시되는 "현재 적용 중인 배출계수" 칩 바.
+ *
+ * 칩에 노출되는 값은 schema(`EmissionFactor` 테이블) → repository(`findAllEmissionFactors`)
+ * → service(`listActiveFactorsAt` / `pickActiveEmissionFactor`)를 거쳐 만들어진다.
+ * 새 버전을 등록하면 이 영역이 바로 새 활성 계수로 바뀌므로,
+ * DB의 계수 변경이 화면에 어떻게 반영되는지 한눈에 확인할 수 있다.
+ */
+function ActiveFactorsBar({ factors }: { factors: readonly EmissionFactor[] }) {
+  return (
+    <div
+      aria-label="현재 적용 중인 배출계수"
+      className="border-b border-neutral-200 bg-neutral-50/60 px-5 py-3 dark:border-neutral-800 dark:bg-neutral-950/30"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+          현재 적용 중인 배출계수
+        </p>
+        <p className="text-[11px] text-neutral-400 dark:text-neutral-500">
+          DB의 활성 버전이 그대로 표시됩니다.
+        </p>
+      </div>
+      <ul className="mt-2 flex flex-wrap gap-2">
+        {factors.map((factor) => (
+          <li key={factor.id}>
+            <FactorChip factor={factor} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function FactorChip({ factor }: { factor: EmissionFactor }) {
+  return (
+    <span
+      title={`적용 시작: ${factor.effectiveFrom}`}
+      className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <span className="font-medium text-neutral-700 dark:text-neutral-200">
+        {formatActivityTypeLabel(factor.activityType)} · {factor.name}
+      </span>
+      <span className="font-semibold text-neutral-900 tabular-nums dark:text-neutral-50">
+        {formatNumber(factor.factor)}
+      </span>
+      <span className="text-neutral-500 dark:text-neutral-400">
+        {factor.factorUnit}
+      </span>
+      <Badge variant="neutral">{formatScopeLabel(factor.scope)}</Badge>
+      <span className="text-[11px] text-neutral-500 tabular-nums dark:text-neutral-400">
+        v{factor.version}
+      </span>
+    </span>
   );
 }
 

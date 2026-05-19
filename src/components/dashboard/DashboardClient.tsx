@@ -8,11 +8,21 @@ import { DomainExplanation } from '@/components/dashboard/DomainExplanation';
 import { EmissionsOverview } from '@/components/dashboard/EmissionsOverview';
 import { buildDashboardMetrics } from '@/features/emissions/dashboardMetrics';
 import { calculateActivitiesWithActiveFactors } from '@/features/emissions/services/emissionCalculationService';
+import { listActiveFactorsAt } from '@/features/emissions/services/emissionFactorService';
 import type {
   ActivityRecord,
   CalculatedEmissionRow,
   EmissionFactor,
 } from '@/features/emissions/types';
+
+/** 오늘 날짜를 `YYYY-MM-DD` ISO 문자열로 반환한다. */
+function todayIsoDate(): string {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 /**
  * 클라이언트 대시보드 셸.
@@ -64,6 +74,14 @@ export function DashboardClient({
 
   const metrics = useMemo(() => buildDashboardMetrics(allRows), [allRows]);
 
+  // 오늘 기준 카테고리별 활성 계수. 같은 (activityType, name)에 여러 버전이
+  // 동시에 유효해도 service가 가장 최근 effectiveFrom을 활성으로 선택한다.
+  // 페이지가 새로고침되어 새 props가 들어오기 전까지는 같은 결과를 캐시한다.
+  const activeFactors = useMemo(
+    () => listActiveFactorsAt(emissionFactors, todayIsoDate()),
+    [emissionFactors],
+  );
+
   const handleAdd = useCallback((record: ActivityRecord): void => {
     setExtraActivities((prev) => [...prev, record]);
     setIsPanelOpen(false);
@@ -96,7 +114,11 @@ export function DashboardClient({
         monthlyEmissions={metrics.monthlyEmissions}
       />
 
-      <ActivityTable rows={metrics.rows} onAddClick={openActivityPanel} />
+      <ActivityTable
+        rows={metrics.rows}
+        activeFactors={activeFactors}
+        onAddClick={openActivityPanel}
+      />
 
       <ActivityInputPanel
         isOpen={isPanelOpen}

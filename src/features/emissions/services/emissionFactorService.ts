@@ -9,6 +9,7 @@
  * 이 모듈의 함수에 넘기는 식으로 합성한다.
  */
 
+import { ACTIVITY_TYPES } from '../types';
 import type { ActivityType, EmissionFactor, IsoDate } from '../types';
 
 /**
@@ -51,4 +52,42 @@ export function findActiveFactorForActivity(
       factor.name === params.description,
   );
   return pickActiveEmissionFactor(candidates, params.activityDate);
+}
+
+/**
+ * 특정 시점(`asOf`)에 카테고리별로 활성인 계수 한 행씩 반환한다.
+ *
+ * 같은 (activityType, name) 그룹에서 여러 버전이 동시에 유효하면
+ * `pickActiveEmissionFactor`가 가장 최근 `effectiveFrom`을 활성으로 선택한다.
+ *
+ * 정렬은 `ACTIVITY_TYPES` 순서 + 이름 사전순으로 고정해, UI가 매 렌더링마다
+ * 같은 순서로 표시되도록 한다.
+ */
+export function listActiveFactorsAt(
+  factors: readonly EmissionFactor[],
+  asOf: IsoDate,
+): EmissionFactor[] {
+  const groups = new Map<string, EmissionFactor[]>();
+  for (const factor of factors) {
+    const key = `${factor.activityType}::${factor.name}`;
+    const bucket = groups.get(key);
+    if (bucket) {
+      bucket.push(factor);
+    } else {
+      groups.set(key, [factor]);
+    }
+  }
+
+  const result: EmissionFactor[] = [];
+  for (const bucket of groups.values()) {
+    const active = pickActiveEmissionFactor(bucket, asOf);
+    if (active) result.push(active);
+  }
+
+  const orderOf = (type: ActivityType): number => ACTIVITY_TYPES.indexOf(type);
+  return result.sort((a, b) => {
+    const diff = orderOf(a.activityType) - orderOf(b.activityType);
+    if (diff !== 0) return diff;
+    return a.name.localeCompare(b.name, 'ko');
+  });
 }

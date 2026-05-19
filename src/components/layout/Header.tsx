@@ -10,7 +10,7 @@ export function Header() {
         <div className="flex flex-wrap items-center gap-2">
           <span
             className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-medium tracking-wider text-orange-700 uppercase dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
-            aria-label="Product code"
+            aria-label="제품 코드"
           >
             <span
               aria-hidden

@@ -44,7 +44,7 @@ export function TextField({
           <span
             aria-hidden
             className="text-orange-600 dark:text-orange-400"
-            title="Required"
+            title="필수 입력"
           >
             *
           </span>

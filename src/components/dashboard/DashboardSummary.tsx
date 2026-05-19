@@ -34,7 +34,7 @@ export function DashboardSummary({
   peakMonth,
 }: DashboardSummaryProps) {
   return (
-    <section aria-label="Executive summary">
+    <section aria-label="핵심 요약 KPI">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           accent

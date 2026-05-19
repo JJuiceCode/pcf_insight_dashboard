@@ -9,21 +9,18 @@ interface NavItem {
 /**
  * 사이드바 네비게이션에 표시할 메뉴 정보.
  *
- * 현재 단계에서는 `Dashboard`만 실제 활성 메뉴로 사용하고,
- * 나머지는 대시보드 셸의 정보 구조를 보여주기 위한 placeholder 메뉴다.
+ * 현재 단계에서는 `대시보드` 한 페이지만 실제로 활성화되어 있으며,
+ * 다른 메뉴는 추후 단계에서 추가한다.
  */
 const NAV_ITEMS: readonly NavItem[] = [
-  { label: 'Dashboard', href: '#dashboard', isActive: true },
-  // { label: 'Activity Data', href: '#activity-data' },
-  // { label: 'Scope Mapping', href: '#scope-mapping' },
-  // { label: 'Assumptions', href: '#assumptions' },
+  { label: '대시보드', href: '#dashboard', isActive: true },
 ];
 
 export function Sidebar() {
   return (
     <aside
-      className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 lg:h-screen lg:sticky lg:top-0 lg:border-b-0 lg:border-r lg:flex lg:flex-col"
-      aria-label="Primary"
+      className="border-b border-neutral-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0 dark:border-neutral-800 dark:bg-neutral-950"
+      aria-label="주요 네비게이션"
     >
       <div className="flex items-center gap-2 px-4 py-4 lg:px-6 lg:py-6">
         <span
@@ -36,14 +33,14 @@ export function Sidebar() {
           <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Insight
           </p>
-          <p className="text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+          <p className="text-[11px] tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
             CT-045 Monitor
           </p>
         </div>
       </div>
 
       <nav
-        aria-label="Dashboard navigation"
+        aria-label="대시보드 메뉴"
         className="px-2 pb-3 lg:flex-1 lg:px-3 lg:pb-6"
       >
         <ul className="flex gap-1 overflow-x-auto lg:flex-col lg:gap-0.5 lg:overflow-visible">
@@ -55,11 +52,11 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="hidden border-t border-neutral-200 px-6 py-4 text-[11px] text-neutral-500 dark:border-neutral-800 dark:text-neutral-400 lg:block">
+      <div className="hidden border-t border-neutral-200 px-6 py-4 text-[11px] text-neutral-500 lg:block dark:border-neutral-800 dark:text-neutral-400">
         <p className="font-medium text-neutral-700 dark:text-neutral-300">
-          Reporting period
+          보고 기간
         </p>
-        <p className="mt-0.5">Jan – Aug 2025</p>
+        <p className="mt-0.5">2025년 1월 ~ 8월</p>
       </div>
     </aside>
   );
@@ -67,7 +64,7 @@ export function Sidebar() {
 
 function SidebarLink({ item }: { item: NavItem }) {
   const base =
-    'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap';
+    'flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500';
 
   if (item.isActive) {
     return (

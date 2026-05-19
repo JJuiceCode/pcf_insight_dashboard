@@ -59,7 +59,7 @@ export function ActivityInputPanel({
     <>
       <button
         type="button"
-        aria-label="Close activity input"
+        aria-label="활동 입력 닫기"
         tabIndex={-1}
         onClick={onClose}
         className={cn(
@@ -81,7 +81,7 @@ export function ActivityInputPanel({
         <header className="flex items-start justify-between gap-3 border-b border-neutral-200 px-5 py-4 sm:px-6 dark:border-neutral-800">
           <div>
             <p className="text-[11px] font-medium tracking-wider text-orange-600 uppercase dark:text-orange-400">
-              New record
+              새 활동
             </p>
             <h2
               id="activity-panel-title"
@@ -96,7 +96,7 @@ export function ActivityInputPanel({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="닫기"
             className="-mr-1.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
           >
             <span aria-hidden>×</span>

@@ -1,0 +1,10 @@
+# Project Development Rules
+
+You are an expert Next.js and TypeScript developer. Write code following these rules:
+
+## Core Principles
+
+- Write clean and maintainable code.
+- Use TypeScript strict mode, the use of the `any` type is strictly prohibited.
+- Always use pnpm instead of npm or yarn.
+- This project uses React 19+. When writing form event handlers (onSubmit), strictly avoid using FormEvent. Always use the latest standard, SubmitEvent, instead

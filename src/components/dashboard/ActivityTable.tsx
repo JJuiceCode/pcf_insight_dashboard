@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
  */
 export interface ActivityTableProps {
   rows: readonly CalculatedEmissionRow[];
-  /** Optional action wired to the section header ("Add activity"). */
+  /** 헤더의 "활동 추가" 버튼이 눌렸을 때 실행할 콜백. 없으면 버튼이 숨겨진다. */
   onAddClick?: () => void;
 }
 
@@ -65,7 +65,9 @@ export function ActivityTable({ rows, onAddClick }: ActivityTableProps) {
                 className="ml-1"
                 aria-label="활동 추가"
               >
-                <span aria-hidden className="text-base leading-none">+</span>
+                <span aria-hidden className="text-base leading-none">
+                  +
+                </span>
                 활동 추가
               </Button>
             ) : null}
@@ -164,7 +166,7 @@ function ActivityRow({ row }: { row: CalculatedEmissionRow }) {
   );
 }
 
-/** Header cell. */
+/** 테이블 헤더 셀. */
 function Th({
   children,
   align = 'left',
@@ -185,7 +187,7 @@ function Th({
   );
 }
 
-/** Body cell. */
+/** 테이블 바디 셀. */
 function Td({
   children,
   align = 'left',

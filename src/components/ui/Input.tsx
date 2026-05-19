@@ -2,7 +2,7 @@ import type { InputHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  /** When true the field is rendered in its error state. */
+  /** true이면 오류 상태 스타일과 `aria-invalid` 속성이 적용된다. */
   hasError?: boolean;
 }
 

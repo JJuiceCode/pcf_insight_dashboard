@@ -43,7 +43,7 @@ export function KpiCard({
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+        <p className="text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
           {label}
         </p>
         {badge ? (
@@ -63,7 +63,7 @@ export function KpiCard({
       </p>
 
       {supportingValue ? (
-        <p className="mt-1 text-sm tabular-nums text-neutral-500 dark:text-neutral-400">
+        <p className="mt-1 text-sm text-neutral-500 tabular-nums dark:text-neutral-400">
           {supportingValue}
         </p>
       ) : null}

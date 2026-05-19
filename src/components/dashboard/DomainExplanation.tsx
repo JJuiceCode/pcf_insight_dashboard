@@ -58,10 +58,9 @@ export function DomainExplanation() {
         </header>
 
         <p className="mt-4 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-          {' '}
           <strong className="font-semibold text-neutral-900 dark:text-neutral-50">
             제품 탄소발자국(Product Carbon Footprint, PCF)
-          </strong>{' '}
+          </strong>
           은 제품 생산 과정에서 발생하는 전체 온실가스 배출량을 의미하며, kgCO2e
           단위로 표현합니다. 각 활동 데이터는 버전 관리된 배출계수를 적용해 최종
           배출량으로 변환됩니다.

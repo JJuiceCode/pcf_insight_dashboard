@@ -1,10 +1,12 @@
+import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/Card';
 import {
   formatKgCO2e,
   formatMonth,
   formatPercentage,
 } from '@/features/emissions/formatters';
-import { cn } from '@/lib/utils';
+import type { EmissionBreakdownRow } from '@/features/emissions/dashboardMetrics';
+import { clampPercent, cn } from '@/lib/utils';
 
 /**
  * 배출량 집계와 추이를 시각적으로 보여주는 섹션.
@@ -12,14 +14,10 @@ import { cn } from '@/lib/utils';
  * 활동 유형·GHG Scope는 전체 대비 비율로,
  * 월별 배출량은 최대 월 기준 상대 막대로 표현한다.
  *
- * 복잡한 차트 라이브러리 대신
- * 가벼운 Tailwind 기반 시각화로 구성한다.
+ * 차트 라이브러리 없이 Tailwind 막대만 사용해
+ * 의존성을 최소화하고 SSR과 동일한 결과를 보장한다.
  */
-export interface EmissionBreakdownRow {
-  label: string;
-  emissionKgCO2e: number;
-  percentage: number;
-}
+export type { EmissionBreakdownRow };
 
 export interface MonthlyEmissionRow {
   month: string;
@@ -43,14 +41,16 @@ export function EmissionsOverview({
     (max, m) => (m.emissionKgCO2e > max ? m.emissionKgCO2e : max),
     0,
   );
-  const peakMonthKey = monthlyEmissions.find(
-    (m) => m.emissionKgCO2e === monthlyPeak && monthlyPeak > 0,
-  )?.month;
+  const peakMonthKey =
+    monthlyPeak > 0
+      ? monthlyEmissions.find((m) => m.emissionKgCO2e === monthlyPeak)?.month
+      : undefined;
 
   return (
-    <section aria-label="Emissions overview">
+    <section aria-label="배출량 개요">
       <div className="grid gap-4 lg:grid-cols-3">
         <BreakdownCard
+          id="overview-activity"
           title="활동 유형별 배출량"
           caption="총 배출량 대비 비중"
           rows={emissionsByActivityType}
@@ -58,29 +58,34 @@ export function EmissionsOverview({
         />
 
         <BreakdownCard
+          id="overview-scope"
           title="GHG Scope별 배출량"
           caption="직접 배출 활동 데이터가 없어 Scope 1은 0으로 표시됩니다."
           rows={emissionsByScope}
           highlightedLabel={topScope?.label}
         />
 
-        <Card aria-labelledby="overview-monthly-title">
-          <CardHeader
+        <Card aria-labelledby="overview-monthly">
+          <SectionHeader
+            id="overview-monthly"
             title="월별 배출량 추이"
             caption="막대 크기는 최대 배출 월을 기준으로 표시됩니다."
-            id="overview-monthly-title"
           />
-          <ul className="mt-4 space-y-3">
-            {monthlyEmissions.map((row) => (
-              <li key={row.month}>
-                <MonthlyRow
-                  row={row}
-                  peakKg={monthlyPeak}
-                  isPeak={row.month === peakMonthKey}
-                />
-              </li>
-            ))}
-          </ul>
+          {monthlyEmissions.length === 0 ? (
+            <EmptyState>표시할 월별 배출 데이터가 없습니다.</EmptyState>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {monthlyEmissions.map((row) => (
+                <li key={row.month}>
+                  <MonthlyRow
+                    row={row}
+                    peakKg={monthlyPeak}
+                    isPeak={row.month === peakMonthKey}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       </div>
     </section>
@@ -88,35 +93,40 @@ export function EmissionsOverview({
 }
 
 function BreakdownCard({
+  id,
   title,
   caption,
   rows,
   highlightedLabel,
 }: {
+  id: string;
   title: string;
   caption: string;
   rows: readonly EmissionBreakdownRow[];
   highlightedLabel?: string;
 }) {
-  const sectionId = `overview-${title.toLowerCase().replace(/\s+/g, '-')}-title`;
   return (
-    <Card aria-labelledby={sectionId}>
-      <CardHeader title={title} caption={caption} id={sectionId} />
-      <ul className="mt-4 space-y-4">
-        {rows.map((row) => (
-          <li key={row.label}>
-            <BreakdownRow
-              row={row}
-              isHighlighted={row.label === highlightedLabel}
-            />
-          </li>
-        ))}
-      </ul>
+    <Card aria-labelledby={id}>
+      <SectionHeader id={id} title={title} caption={caption} />
+      {rows.length === 0 ? (
+        <EmptyState>표시할 데이터가 없습니다.</EmptyState>
+      ) : (
+        <ul className="mt-4 space-y-4">
+          {rows.map((row) => (
+            <li key={row.label}>
+              <BreakdownRow
+                row={row}
+                isHighlighted={row.label === highlightedLabel}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }
 
-function CardHeader({
+function SectionHeader({
   title,
   caption,
   id,
@@ -137,6 +147,14 @@ function CardHeader({
         {caption}
       </p>
     </div>
+  );
+}
+
+function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">
+      {children}
+    </p>
   );
 }
 
@@ -216,7 +234,7 @@ function ProgressTrack({
   children,
   className,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
@@ -261,11 +279,4 @@ function pickTopByEmission<R extends { label: string; emissionKgCO2e: number }>(
     if (!top || row.emissionKgCO2e > top.emissionKgCO2e) top = row;
   }
   return top;
-}
-
-function clampPercent(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  if (value < 0) return 0;
-  if (value > 100) return 100;
-  return value;
 }

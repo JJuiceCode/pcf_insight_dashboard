@@ -4,8 +4,8 @@ import {
   useId,
   useMemo,
   useState,
-  type ReactNode,
   type SubmitEvent,
+  type ReactNode,
 } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -38,6 +38,9 @@ import { cn } from '@/lib/utils';
  * 배출계수 매칭과 실시간 배출량 미리보기는
  * 동일한 검증 결과를 기반으로 계산해
  * 화면에 보이는 값과 실제 저장 값이 항상 같도록 유지한다.
+ *
+ * 폼 리셋은 호스트(`ActivityInputPanel`)가 `key`를 증가시켜
+ * 컴포넌트를 다시 마운트하는 방식으로 수행한다.
  */
 export interface ActivityFormProps {
   emissionFactors: readonly EmissionFactor[];
@@ -88,6 +91,8 @@ export function ActivityForm({
     Partial<Record<ActivityFormField, boolean>>
   >({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  // 사용자가 빠르게 더블 클릭해도 동일한 레코드가 두 번 추가되지 않게 한다.
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validation = useMemo(
     () => validateActivityForm(draft, emissionFactors),
@@ -125,7 +130,9 @@ export function ActivityForm({
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>): void => {
     event.preventDefault();
     setHasAttemptedSubmit(true);
+
     if (
+      isSubmitting ||
       !validation.isValid ||
       validation.parsedAmount === null ||
       !validation.matchedFactor ||
@@ -134,6 +141,8 @@ export function ActivityForm({
     ) {
       return;
     }
+
+    setIsSubmitting(true);
     const record: ActivityRecord = {
       id: generateActivityId(),
       productId,
@@ -144,6 +153,8 @@ export function ActivityForm({
       unit: validation.unit,
     };
     onSubmit(record);
+    // 부모가 패널을 닫고 다음 오픈 시 새 키로 폼을 다시 마운트하므로
+    // 별도 로컬 리셋이 필요 없다. isSubmitting은 마운트 해제와 함께 사라진다.
   };
 
   const dateId = useId();
@@ -152,8 +163,10 @@ export function ActivityForm({
   const amountId = useId();
   const unitId = useId();
 
+  const isSubmitDisabled = !validation.isValid || isSubmitting;
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
+    <form onSubmit={handleSubmit} className="flex flex-1 flex-col" noValidate>
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
         <TextField
           label="날짜"
@@ -191,7 +204,7 @@ export function ActivityForm({
             hasError={shouldShowError('activityType')}
           >
             <option value="" disabled>
-              활동 유형을 선택해주세요.
+              활동 유형을 선택해 주세요.
             </option>
             {ACTIVITY_TYPE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -228,8 +241,8 @@ export function ActivityForm({
           >
             <option value="" disabled>
               {draft.activityType
-                ? '설명을 선택해주세요.'
-                : '활동 유형을 선택해주세요.'}
+                ? '설명을 선택해 주세요.'
+                : '활동 유형을 먼저 선택해 주세요.'}
             </option>
             {descriptionOptions.map((factor) => (
               <option key={factor.id} value={factor.name}>
@@ -287,16 +300,32 @@ export function ActivityForm({
       </div>
 
       <footer className="flex items-center justify-end gap-2 border-t border-neutral-200 bg-neutral-50 px-5 py-4 sm:px-6 dark:border-neutral-800 dark:bg-neutral-950/40">
-        <Button variant="ghost" onClick={onCancel} type="button">
+        <Button
+          variant="ghost"
+          onClick={onCancel}
+          type="button"
+          disabled={isSubmitting}
+        >
           취소
         </Button>
-        <Button variant="primary" type="submit">
-          활동 추가
+        <Button variant="primary" type="submit" disabled={isSubmitDisabled}>
+          {isSubmitting ? '저장 중…' : '활동 추가'}
         </Button>
       </footer>
     </form>
   );
 }
+
+type PreviewTone = 'neutral' | 'accent' | 'warning';
+
+const PREVIEW_TONE_CLASSES: Record<PreviewTone, string> = {
+  neutral:
+    'border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950/40',
+  accent:
+    'border-orange-200 bg-orange-50/70 dark:border-orange-900/60 dark:bg-orange-950/20',
+  warning:
+    'border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20',
+};
 
 function FactorPreview({
   matchedFactor,
@@ -325,7 +354,7 @@ function FactorPreview({
           선택한 활동에 대한 배출계수를 찾을 수 없습니다.
         </p>
         <p className="mt-1 text-xs text-amber-700/80 dark:text-amber-300/80">
-          배출계수 목록을 확인해 주세요
+          배출계수 목록을 확인해 주세요.
         </p>
       </PreviewShell>
     );
@@ -372,26 +401,17 @@ function FactorPreview({
   );
 }
 
-type PreviewTone = 'neutral' | 'accent' | 'warning';
-interface PreviewShellProps {
+function PreviewShell({
+  tone,
+  children,
+}: {
   tone: PreviewTone;
   children: ReactNode;
-}
-
-function PreviewShell({ tone, children }: PreviewShellProps) {
-  const TONE_CLASSES: Record<typeof tone, string> = {
-    neutral:
-      'border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950/40',
-    accent:
-      'border-orange-200 bg-orange-50/70 dark:border-orange-900/60 dark:bg-orange-950/20',
-    warning:
-      'border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20',
-  };
-
+}) {
   return (
     <section
-      aria-label="Factor preview"
-      className={cn('rounded-lg border p-4', TONE_CLASSES[tone])}
+      aria-label="배출계수 미리보기"
+      className={cn('rounded-lg border p-4', PREVIEW_TONE_CLASSES[tone])}
     >
       <p className="mb-2 text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
         배출계수 미리보기

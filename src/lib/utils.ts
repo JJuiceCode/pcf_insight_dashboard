@@ -1,10 +1,9 @@
 /**
- * 최소한의 className 조합 유틸.
- *
- * 의도적으로 가볍게 둔다. `clsx`, `tailwind-merge`는 쓰지 않는다.
- * 컴포넌트 레이어에는 (a) 클래스 문자열을 이어 붙이고
- * (b) `accent && 'border-orange-200'` 같은 단락 평가로 생긴
- * falsy 값을 건너뛰는 정도만 필요하다.
+ * `clsx`, `tailwind-merge` 등을 사용하지 않고 조건부 class 조합을 위한 유틸.
+ * ex:
+ * className={cn('base-class',
+ * isActive && 'text-orange-500',
+ * disabled && 'opacity-50')}
  */
 export type ClassValue = string | false | null | undefined;
 

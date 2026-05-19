@@ -58,6 +58,7 @@ The dashboard should help executives and operators understand:
 - Use orange as the main accent color.
 - Tables must be horizontally scrollable on small screens.
 - KPI values must come from calculation utilities, not hardcoded numbers.
+- All user-facing UI text, labels, helper messages, and placeholder content should be written in Korean.
 
 ## Code Organization
 

@@ -3,15 +3,16 @@
 /** @type {import('prettier').Config} */
 const config = {
   semi: true,
-  trailingComma: "all",
+  trailingComma: 'all',
   singleQuote: true,
   printWidth: 80,
   tabWidth: 2,
   bracketSpacing: true,
-  arrowParens: "always",
+  arrowParens: 'always',
 
   // 중요
-  proseWrap: "preserve",
+  proseWrap: 'preserve',
+  plugins: ['prettier-plugin-tailwindcss'],
 };
 
 export default config;

@@ -34,7 +34,7 @@
 
  */
 
-export type GhgScope = "scope1" | "scope2" | "scope3";
+export type GhgScope = 'scope1' | 'scope2' | 'scope3';
 
 /**
 
@@ -50,11 +50,11 @@ export type GhgScope = "scope1" | "scope2" | "scope3";
 
  */
 
-export type ActivityType = "electricity" | "material" | "transport";
+export type ActivityType = 'electricity' | 'material' | 'transport';
 
 /** 활동량 단위. */
 
-export type ActivityUnit = "kWh" | "kg" | "ton-km";
+export type ActivityUnit = 'kWh' | 'kg' | 'ton-km';
 
 /**
 
@@ -64,7 +64,7 @@ export type ActivityUnit = "kWh" | "kg" | "ton-km";
 
  */
 
-export type FactorUnit = "kgCO2e/kWh" | "kgCO2e/kg" | "kgCO2e/ton-km";
+export type FactorUnit = 'kgCO2e/kWh' | 'kgCO2e/kg' | 'kgCO2e/ton-km';
 
 /**
 
@@ -74,12 +74,12 @@ export type FactorUnit = "kgCO2e/kWh" | "kgCO2e/kg" | "kgCO2e/ton-km";
 
  */
 
-export type FactorUnitFor<U extends ActivityUnit> = U extends "kWh"
-  ? "kgCO2e/kWh"
-  : U extends "kg"
-    ? "kgCO2e/kg"
-    : U extends "ton-km"
-      ? "kgCO2e/ton-km"
+export type FactorUnitFor<U extends ActivityUnit> = U extends 'kWh'
+  ? 'kgCO2e/kWh'
+  : U extends 'kg'
+    ? 'kgCO2e/kg'
+    : U extends 'ton-km'
+      ? 'kgCO2e/ton-km'
       : never;
 
 /** `YYYY-MM-DD` 형식의 ISO 날짜 문자열. */
@@ -233,19 +233,19 @@ export interface CalculatedEmissionRow {
  */
 
 export const GHG_SCOPES: readonly GhgScope[] = [
-  "scope1",
+  'scope1',
 
-  "scope2",
+  'scope2',
 
-  "scope3",
+  'scope3',
 ] as const;
 
 /** 대시보드가 보고하는 활동 유형 목록(고정 순서). */
 
 export const ACTIVITY_TYPES: readonly ActivityType[] = [
-  "electricity",
+  'electricity',
 
-  "material",
+  'material',
 
-  "transport",
+  'transport',
 ] as const;

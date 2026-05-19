@@ -40,9 +40,9 @@ import type {
   CalculatedEmissionRow,
   EmissionFactor,
   GhgScope,
-} from "./types";
+} from './types';
 
-import { ACTIVITY_TYPES, GHG_SCOPES } from "./types";
+import { ACTIVITY_TYPES, GHG_SCOPES } from './types';
 
 /**
 

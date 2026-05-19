@@ -1,8 +1,7 @@
 /**
- * PCF 대시보드 페이지 헤더.
+ * PCF Insight 대시보드 페이지 헤더.
  *
  * 대시보드 목적만 전달하고 계산된 KPI는 표시하지 않는다.
- * 카드·차트·테이블 등 데이터 영역은 이후 단계에서 추가한다.
  */
 export function Header() {
   return (
@@ -33,8 +32,8 @@ export function Header() {
         </p>
 
         <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-          Activity data is matched with versioned emission factors to
-          calculate kgCO2e and classify emissions by GHG Scope.
+          Activity data is matched with versioned emission factors to calculate
+          kgCO2e and classify emissions by GHG Scope.
         </p>
       </div>
     </header>

@@ -14,8 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'PCF Insight Dashboard',
-  description:
-    'Product Carbon Footprint overview for CT-045 Computer Monitor.',
+  description: 'Product Carbon Footprint overview for CT-045 Computer Monitor.',
 };
 
 export default function RootLayout({

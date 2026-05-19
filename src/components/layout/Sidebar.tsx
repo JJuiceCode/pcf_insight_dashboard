@@ -1,34 +1,28 @@
 import { cn } from '@/lib/utils';
 
-/**
- * 사이드바에 표시하는 네비게이션 항목.
- *
- * 이 단계에서는 `Dashboard`만 활성으로 연결한다.
- * 나머지 경로는 플레이스홀더로, 라우터·앱 상태 없이도
- * SaaS 셸이 완성된 느낌을 주기 위함이다.
- */
 interface NavItem {
   label: string;
   href: string;
   isActive?: boolean;
 }
 
+/**
+ * 사이드바 네비게이션에 표시할 메뉴 정보.
+ *
+ * 현재 단계에서는 `Dashboard`만 실제 활성 메뉴로 사용하고,
+ * 나머지는 대시보드 셸의 정보 구조를 보여주기 위한 placeholder 메뉴다.
+ */
 const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Dashboard', href: '#dashboard', isActive: true },
-  { label: 'Activity Data', href: '#activity-data' },
-  { label: 'Scope Mapping', href: '#scope-mapping' },
-  { label: 'Assumptions', href: '#assumptions' },
+  // { label: 'Activity Data', href: '#activity-data' },
+  // { label: 'Scope Mapping', href: '#scope-mapping' },
+  // { label: 'Assumptions', href: '#assumptions' },
 ];
 
 export function Sidebar() {
   return (
     <aside
-      className={cn(
-        'border-b border-neutral-200 bg-white',
-        'dark:border-neutral-800 dark:bg-neutral-950',
-        'lg:h-screen lg:sticky lg:top-0 lg:border-b-0 lg:border-r',
-        'lg:flex lg:flex-col',
-      )}
+      className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 lg:h-screen lg:sticky lg:top-0 lg:border-b-0 lg:border-r lg:flex lg:flex-col"
       aria-label="Primary"
     >
       <div className="flex items-center gap-2 px-4 py-4 lg:px-6 lg:py-6">
@@ -36,9 +30,7 @@ export function Sidebar() {
           aria-hidden
           className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:bg-orange-500/15 dark:text-orange-400 dark:ring-orange-500/30"
         >
-          <span className="text-sm font-semibold tracking-tight">
-            PCF
-          </span>
+          <span className="text-sm font-semibold tracking-tight">PCF</span>
         </span>
         <div className="leading-tight">
           <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">

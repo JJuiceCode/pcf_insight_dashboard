@@ -12,7 +12,7 @@
 
  */
 
-import type { ActivityType, GhgScope } from "./types";
+import type { ActivityType, GhgScope } from './types';
 
 const EMISSION_DECIMALS = 3;
 
@@ -26,10 +26,10 @@ const PERCENTAGE_DECIMALS = 1;
 
  */
 
-const NUMBER_LOCALE = "en-US";
+const NUMBER_LOCALE = 'en-US';
 
 function formatFixedDecimals(value: number, decimals: number): string {
-  if (!Number.isFinite(value)) return "—";
+  if (!Number.isFinite(value)) return '—';
 
   return value.toLocaleString(NUMBER_LOCALE, {
     minimumFractionDigits: decimals,
@@ -57,7 +57,7 @@ export function formatKgCO2e(value: number): string {
  */
 
 export function formatTCO2e(valueInKg: number): string {
-  if (!Number.isFinite(valueInKg)) return "—";
+  if (!Number.isFinite(valueInKg)) return '—';
 
   const valueInTonnes = valueInKg / 1000;
 
@@ -79,9 +79,9 @@ export function formatPercentage(value: number): string {
 }
 
 const ACTIVITY_TYPE_LABEL: Record<ActivityType, string> = {
-  electricity: "전기",
-  material: "원소재",
-  transport: "운송",
+  electricity: '전기',
+  material: '원소재',
+  transport: '운송',
 };
 
 export function formatActivityTypeLabel(activityType: ActivityType): string {
@@ -89,11 +89,11 @@ export function formatActivityTypeLabel(activityType: ActivityType): string {
 }
 
 const SCOPE_LABEL: Record<GhgScope, string> = {
-  scope1: "Scope 1",
+  scope1: 'Scope 1',
 
-  scope2: "Scope 2",
+  scope2: 'Scope 2',
 
-  scope3: "Scope 3",
+  scope3: 'Scope 3',
 };
 
 export function formatScopeLabel(scope: GhgScope): string {

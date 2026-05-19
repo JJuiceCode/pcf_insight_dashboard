@@ -67,3 +67,78 @@ export async function createActivity(
   }
   return parsed;
 }
+
+/**
+ * 일괄 삽입용 입력 형태.
+ *
+ * 도메인 `ActivityRecord`는 `date: IsoDate`(YYYY-MM-DD)지만, 일괄 삽입 경로에서는
+ * Excel 파서가 이미 정규화한 `Date`(UTC 자정)를 그대로 받아 변환 비용을 줄인다.
+ */
+export interface CreateActivityInput {
+  productId: string;
+  activityType: ActivityRecord['activityType'];
+  description: string;
+  amount: number;
+  unit: ActivityRecord['unit'];
+  activityDate: Date;
+}
+
+/**
+ * 활동 레코드 일괄 삽입.
+ *
+ * 입력은 호출 측(서비스 레이어)에서 이미 도메인 검증·중복 제거가 끝났다고 가정한다.
+ * 빈 배열은 0을 반환하고 DB 호출도 하지 않는다.
+ */
+export async function createManyActivities(
+  rows: readonly CreateActivityInput[],
+): Promise<number> {
+  if (rows.length === 0) return 0;
+
+  const result = await prisma.activityRecord.createMany({
+    data: rows.map((row) => ({
+      productId: row.productId,
+      activityType: row.activityType,
+      description: row.description,
+      amount: row.amount,
+      unit: row.unit,
+      activityDate: row.activityDate,
+    })),
+  });
+
+  return result.count;
+}
+
+/**
+ * 중복 감지에 사용하는 활동 식별 키.
+ *
+ * (productId, activityDate, activityType, description, amount) 조합으로
+ * 같은 활동을 두 번 저장하지 않도록 한다. DB에 unique 제약을 추가하는 대신
+ * 서비스 레이어에서 비교하므로, 정책이 바뀌어도 스키마 마이그레이션이 필요 없다.
+ */
+export interface ActivityCompositeKeyRow {
+  activityType: string;
+  description: string;
+  amount: number;
+  activityDate: Date;
+}
+
+/**
+ * 중복 검사용으로 특정 제품의 활동 키 컬럼만 조회한다.
+ *
+ * 전체 행이 아니라 식별에 필요한 4개 컬럼만 가져와 메모리 사용을 줄인다.
+ * 도메인 정제(enum 좁히기)는 수행하지 않는다. 식별이 목적이므로 raw 문자열도 그대로 비교한다.
+ */
+export async function findActivityKeysByProductId(
+  productId: string,
+): Promise<ActivityCompositeKeyRow[]> {
+  const rows = await prisma.activityRecord.findMany({
+    where: { productId },
+    select: {
+      activityType: true,
+      description: true,
+      amount: true,
+      activityDate: true,
+    },
+  });
+  return rows;
+}

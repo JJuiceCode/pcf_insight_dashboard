@@ -144,3 +144,20 @@ export const ACTIVITY_TYPES: readonly ActivityType[] = [
   'material',
   'transport',
 ] as const;
+
+/**
+ * Excel 활동 데이터 가져오기 결과 요약.
+ *
+ * - `importedCount`: 실제로 DB에 새로 저장된 행 수.
+ * - `skippedCount`: 중복·검증 실패로 저장하지 않은 행 수.
+ * - `totalRows`: 시트에서 인식된 데이터 행 수(헤더·빈 행 제외).
+ *   `importedCount + skippedCount`와 일치한다.
+ * - `sheetName`: 실제 파싱에 사용한 워크시트 이름. UI에서 운영자가 어떤 시트가
+ *   처리됐는지 확인할 수 있게 한다.
+ */
+export interface ExcelImportResult {
+  importedCount: number;
+  skippedCount: number;
+  totalRows: number;
+  sheetName: string;
+}

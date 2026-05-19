@@ -1,22 +1,38 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
   label: string;
   href: string;
-  isActive?: boolean;
+  /** 사용자에게 보이는 보조 설명. 메뉴가 늘어났을 때 의도를 빠르게 알 수 있게 한다. */
+  description?: string;
 }
 
 /**
- * 사이드바 네비게이션에 표시할 메뉴 정보.
+ * 사이드바 네비게이션 메뉴 정의.
  *
- * 현재 단계에서는 `대시보드` 한 페이지만 실제로 활성화되어 있으며,
- * 다른 메뉴는 추후 단계에서 추가한다.
+ * 활성 여부는 현재 라우트(`usePathname`)에서 동적으로 판단하므로
+ * 여기서는 라벨과 경로만 선언한다.
  */
 const NAV_ITEMS: readonly NavItem[] = [
-  { label: '대시보드', href: '#dashboard', isActive: true },
+  {
+    label: '대시보드',
+    href: '/',
+    description: 'CT-045 시드 기반 PCF 현황',
+  },
+  {
+    label: '데이터 가져오기',
+    href: '/import',
+    description: 'Excel 파일 업로드 워크플로우',
+  },
 ];
 
 export function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside
       className="border-b border-neutral-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0 dark:border-neutral-800 dark:bg-neutral-950"
@@ -46,7 +62,7 @@ export function Sidebar() {
         <ul className="flex gap-1 overflow-x-auto lg:flex-col lg:gap-0.5 lg:overflow-visible">
           {NAV_ITEMS.map((item) => (
             <li key={item.href} className="shrink-0 lg:shrink">
-              <SidebarLink item={item} />
+              <SidebarLink item={item} isActive={isItemActive(pathname, item)} />
             </li>
           ))}
         </ul>
@@ -62,13 +78,30 @@ export function Sidebar() {
   );
 }
 
-function SidebarLink({ item }: { item: NavItem }) {
+/**
+ * 라우트 기반 활성 여부 판별.
+ * 루트(`/`)는 정확히 일치할 때만, 그 외 경로는 `startsWith`로 하위 라우트도 활성으로 본다.
+ * `pathname`이 null인 초기 SSR 케이스에서도 안전하게 false로 폴백한다.
+ */
+function isItemActive(pathname: string | null, item: NavItem): boolean {
+  if (!pathname) return false;
+  if (item.href === '/') return pathname === '/';
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+function SidebarLink({
+  item,
+  isActive,
+}: {
+  item: NavItem;
+  isActive: boolean;
+}) {
   const base =
     'flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500';
 
-  if (item.isActive) {
+  if (isActive) {
     return (
-      <a
+      <Link
         href={item.href}
         aria-current="page"
         className={cn(
@@ -82,12 +115,12 @@ function SidebarLink({ item }: { item: NavItem }) {
           className="h-1.5 w-1.5 rounded-full bg-orange-500 dark:bg-orange-400"
         />
         {item.label}
-      </a>
+      </Link>
     );
   }
 
   return (
-    <a
+    <Link
       href={item.href}
       className={cn(
         base,
@@ -100,6 +133,6 @@ function SidebarLink({ item }: { item: NavItem }) {
         className="h-1.5 w-1.5 rounded-full bg-neutral-300 dark:bg-neutral-700"
       />
       {item.label}
-    </a>
+    </Link>
   );
 }

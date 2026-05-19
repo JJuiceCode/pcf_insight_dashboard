@@ -2,7 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import type { ExcelImportResult } from '@/features/emissions/types';
 import { ExcelUploadCard } from './ExcelUploadCard';
 import { FilePreview } from './FilePreview';
@@ -14,17 +16,33 @@ import { ImportResultCard } from './ImportResultCard';
  * 책임:
  *  - 선택된 파일과 클라이언트 측 검증 에러를 보관한다.
  *  - "엑셀 데이터 가져오기" 버튼 클릭 시 `/api/import/excel`로 multipart 요청을 보낸다.
- *  - 서버 응답을 받아 success/error 결과 카드를 렌더링한다.
- *  - 성공 시 `router.refresh()`로 서버 컴포넌트(`/import` 페이지)를 다시 평가시켜
- *    아래의 imported 대시보드가 새 ActivityRecord를 반영하도록 한다.
+ *  - "엑셀 데이터 지우기" 버튼 클릭 시 확인 단계를 거쳐 `/api/import/excel`로 DELETE 요청을 보낸다.
+ *  - 두 액션 모두 성공 시 `router.refresh()`로 서버 컴포넌트(`/import` 페이지)를 다시 평가시켜
+ *    아래의 imported 대시보드가 새 상태(가져온 데이터 또는 빈 상태)를 반영하도록 한다.
  *
  * 대시보드 자체의 계산·렌더링은 페이지 서버 컴포넌트가 담당하므로 이 컴포넌트는
- * 가져오기 트리거와 결과 표시에만 책임을 갖는다.
+ * 가져오기/지우기 트리거와 결과 표시에만 책임을 갖는다.
  */
 type ImportStatus =
   | { kind: 'idle' }
   | { kind: 'submitting' }
   | { kind: 'success'; result: ExcelImportResult }
+  | { kind: 'error'; message: string };
+
+/**
+ * 지우기 액션의 4단계 상태.
+ *
+ *   idle       : 초기 상태. "엑셀 데이터 지우기" 버튼만 보인다.
+ *   confirming : 사용자가 1차 클릭. 경고 메시지와 [취소] [지우기] 두 버튼이 보인다.
+ *   deleting   : DELETE 요청 진행 중. 버튼은 비활성화되고 텍스트가 바뀐다.
+ *   error      : 실패. 메시지와 함께 다시 시도하거나 취소할 수 있다.
+ *
+ * 성공 시에는 `idle`로 복귀하면서 상위 import 상태도 함께 초기화한다.
+ */
+type DeleteStatus =
+  | { kind: 'idle' }
+  | { kind: 'confirming' }
+  | { kind: 'deleting' }
   | { kind: 'error'; message: string };
 
 const IMPORT_ENDPOINT = '/api/import/excel';
@@ -38,14 +56,34 @@ interface ServerErrorPayload {
   message?: string;
 }
 
-export function ImportClient() {
+export interface ImportClientProps {
+  /**
+   * 서버가 판단한 "가져온 데이터 존재 여부".
+   * true일 때만 "엑셀 데이터 지우기" 섹션이 표시된다.
+   * 지우기 성공 후 `router.refresh()`로 서버가 다시 평가되면 자연스럽게 false가 되어 섹션이 숨겨진다.
+   */
+  hasImportedData: boolean;
+  /** 현재 SQLite에 적재된 ActivityRecord 수. 확인 단계에서 운영자에게 보여 준다. */
+  importedRowCount: number;
+}
+
+export function ImportClient({
+  hasImportedData,
+  importedRowCount,
+}: ImportClientProps) {
   const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [status, setStatus] = useState<ImportStatus>({ kind: 'idle' });
+  const [deleteStatus, setDeleteStatus] = useState<DeleteStatus>({
+    kind: 'idle',
+  });
 
   const isSubmitting = status.kind === 'submitting';
-  const canImport = selectedFile !== null && !isSubmitting;
+  const isDeleting = deleteStatus.kind === 'deleting';
+  // 가져오기와 지우기는 서로 race condition을 만들 수 있으니, 한쪽이 진행 중이면 다른 쪽도 막는다.
+  const isBusy = isSubmitting || isDeleting;
+  const canImport = selectedFile !== null && !isBusy;
 
   const handleFileSelected = useCallback((file: File) => {
     setSelectedFile(file);
@@ -67,7 +105,7 @@ export function ImportClient() {
   }, []);
 
   const handleImport = useCallback(async () => {
-    if (!selectedFile || isSubmitting) return;
+    if (!selectedFile || isBusy) return;
 
     setStatus({ kind: 'submitting' });
 
@@ -99,7 +137,45 @@ export function ImportClient() {
           : '네트워크 오류로 가져오기에 실패했습니다.';
       setStatus({ kind: 'error', message });
     }
-  }, [selectedFile, isSubmitting, router]);
+  }, [selectedFile, isBusy, router]);
+
+  const handleStartDelete = useCallback(() => {
+    if (isBusy) return;
+    setDeleteStatus({ kind: 'confirming' });
+  }, [isBusy]);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeleteStatus({ kind: 'idle' });
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (isBusy) return;
+    setDeleteStatus({ kind: 'deleting' });
+
+    try {
+      const response = await fetch(IMPORT_ENDPOINT, { method: 'DELETE' });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(response);
+        setDeleteStatus({ kind: 'error', message });
+        return;
+      }
+
+      // 가져오기 상태 일체를 초기화하고 서버 데이터를 다시 가져온다.
+      // hasImportedData가 false로 바뀌면서 이 섹션 자체가 자연스럽게 사라진다.
+      setSelectedFile(null);
+      setValidationError(null);
+      setStatus({ kind: 'idle' });
+      setDeleteStatus({ kind: 'idle' });
+      router.refresh();
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? `네트워크 오류로 삭제에 실패했습니다. (${error.message})`
+          : '네트워크 오류로 삭제에 실패했습니다.';
+      setDeleteStatus({ kind: 'error', message });
+    }
+  }, [isBusy, router]);
 
   return (
     <div className="space-y-5">
@@ -108,19 +184,19 @@ export function ImportClient() {
         onFileSelected={handleFileSelected}
         onInvalidFile={handleInvalidFile}
         errorMessage={validationError}
-        disabled={isSubmitting}
+        disabled={isBusy}
       />
 
       <FilePreview
         file={selectedFile}
         onClear={handleClear}
-        disabled={isSubmitting}
+        disabled={isBusy}
       />
 
       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          가져오기를 실행하면 선택한 엑셀 파일이 서버로 전송되어 활동 데이터로
-          저장됩니다.
+          가져오기를 실행하면 같은 제품의 기존 가져오기 데이터가 새 엑셀 파일로
+          완전히 교체됩니다.
         </p>
         <Button
           type="button"
@@ -140,7 +216,143 @@ export function ImportClient() {
       {status.kind === 'error' ? (
         <ImportResultCard state={{ kind: 'error', message: status.message }} />
       ) : null}
+
+      {hasImportedData ? (
+        <ImportClearSection
+          importedRowCount={importedRowCount}
+          deleteStatus={deleteStatus}
+          onStart={handleStartDelete}
+          onCancel={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          importBusy={isSubmitting}
+        />
+      ) : null}
     </div>
+  );
+}
+
+/**
+ * "엑셀 데이터 지우기" 섹션.
+ *
+ * 1차 클릭(`onStart`) → 인라인 확인 패널(`confirming`) → `onConfirm`으로 실제 DELETE 호출.
+ * 모달이 아니라 동일 카드 내에서 단계가 바뀌어, 운영자가 같은 컨텍스트 안에서
+ * 의사결정을 끝낼 수 있게 한다.
+ *
+ * 가져오기가 진행 중일 때(`importBusy`)는 충돌을 막기 위해 시작 버튼을 비활성화한다.
+ */
+interface ImportClearSectionProps {
+  importedRowCount: number;
+  deleteStatus: DeleteStatus;
+  onStart: () => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+  importBusy: boolean;
+}
+
+function ImportClearSection({
+  importedRowCount,
+  deleteStatus,
+  onStart,
+  onCancel,
+  onConfirm,
+  importBusy,
+}: ImportClearSectionProps) {
+  const isConfirming = deleteStatus.kind === 'confirming';
+  const isDeleting = deleteStatus.kind === 'deleting';
+  const errorMessage =
+    deleteStatus.kind === 'error' ? deleteStatus.message : null;
+
+  return (
+    <Card
+      aria-labelledby="import-clear-title"
+      className="border-dashed bg-neutral-50/60 dark:bg-neutral-950/40"
+    >
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="warning">위험</Badge>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              현재 가져온 데이터: {importedRowCount.toLocaleString('ko-KR')}건
+            </span>
+          </div>
+          <h3
+            id="import-clear-title"
+            className="mt-2 text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+          >
+            엑셀 데이터 지우기
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-neutral-500 dark:text-neutral-400">
+            가져온 ActivityRecord만 삭제됩니다. 시드 데이터(<code className="font-mono text-xs">/</code>)와
+            배출계수 히스토리는 영향을 받지 않습니다.
+          </p>
+        </div>
+
+        {!isConfirming && !isDeleting ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onStart}
+            disabled={importBusy}
+            className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40 dark:hover:text-red-300"
+          >
+            엑셀 데이터 지우기
+          </Button>
+        ) : null}
+      </header>
+
+      {isConfirming || isDeleting ? (
+        <div
+          role="alertdialog"
+          aria-labelledby="import-clear-confirm-title"
+          aria-describedby="import-clear-confirm-desc"
+          className="mt-4 rounded-xl border border-red-200 bg-red-50/70 p-4 dark:border-red-500/40 dark:bg-red-950/30"
+        >
+          <p
+            id="import-clear-confirm-title"
+            className="text-sm font-semibold text-red-700 dark:text-red-300"
+          >
+            정말 가져온 데이터를 지울까요?
+          </p>
+          <p
+            id="import-clear-confirm-desc"
+            className="mt-1 text-xs leading-6 text-red-700/80 dark:text-red-300/80"
+          >
+            {importedRowCount.toLocaleString('ko-KR')}건의 가져온 활동 데이터가
+            삭제되고, 아래의 가져온 데이터 기반 대시보드는 빈 상태로 돌아갑니다.
+            이 작업은 되돌릴 수 없습니다.
+          </p>
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onCancel}
+              disabled={isDeleting}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={onConfirm}
+              disabled={isDeleting}
+              aria-busy={isDeleting || undefined}
+              className="bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 dark:disabled:hover:bg-red-600"
+            >
+              {isDeleting ? '지우는 중...' : '지우기'}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {errorMessage ? (
+        <p
+          role="alert"
+          className="mt-3 text-xs leading-6 text-red-700 dark:text-red-300"
+        >
+          {errorMessage} 다시 시도해 주세요.
+        </p>
+      ) : null}
+    </Card>
   );
 }
 
@@ -160,5 +372,5 @@ async function extractErrorMessage(response: Response): Promise<string> {
   } catch {
     // JSON 파싱 실패 시 폴백 메시지를 사용한다.
   }
-  return `가져오기에 실패했습니다. (HTTP ${response.status})`;
+  return `요청에 실패했습니다. (HTTP ${response.status})`;
 }

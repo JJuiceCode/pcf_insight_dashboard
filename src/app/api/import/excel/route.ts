@@ -1,6 +1,7 @@
 import { IMPORTED_PRODUCT_ID } from '@/features/emissions/constants';
 import {
   ExcelImportError,
+  clearImportedActivities,
   importExcelActivities,
 } from '@/features/emissions/services/excelImportService';
 
@@ -66,6 +67,18 @@ export async function POST(request: Request): Promise<Response> {
     // 정의되지 않은 오류는 그대로 위로 던져 Next.js의 표준 500 처리를 따른다.
     throw error;
   }
+}
+
+/**
+ * 가져온 ActivityRecord를 모두 비우는 엔드포인트.
+ *
+ * `/import` 페이지의 "엑셀 데이터 지우기" 액션이 이 핸들러를 호출한다.
+ * `IMPORTED_PRODUCT_ID` 범위만 비우므로 `/`의 시드 데이터와 EmissionFactor 히스토리는
+ * 영향을 받지 않는다. 호출 시점에 가져온 행이 없어도 정상으로 간주하고 0을 반환한다.
+ */
+export async function DELETE(): Promise<Response> {
+  const result = await clearImportedActivities(IMPORTED_PRODUCT_ID);
+  return Response.json(result);
 }
 
 function errorResponse(

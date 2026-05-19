@@ -47,10 +47,7 @@ export default async function ImportPage() {
       <ImportPageHeader />
       <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:space-y-10 lg:px-8 lg:py-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
-          <section
-            aria-labelledby="import-upload-title"
-            className="space-y-5"
-          >
+          <section aria-labelledby="import-upload-title" className="space-y-5">
             <div>
               <h2
                 id="import-upload-title"
@@ -59,11 +56,14 @@ export default async function ImportPage() {
                 Excel 파일 업로드
               </h2>
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                활동 데이터를 담은 엑셀 파일을 선택해 가져오기를 실행하면
-                아래에 가져온 데이터 기반 대시보드가 함께 갱신됩니다.
+                활동 데이터를 담은 엑셀 파일을 선택해 가져오기를 실행하면 아래에
+                가져온 데이터 기반 대시보드가 함께 갱신됩니다.
               </p>
             </div>
-            <ImportClient />
+            <ImportClient
+              hasImportedData={hasImportedData}
+              importedRowCount={activities.length}
+            />
           </section>
 
           <aside aria-label="가져오기 안내" className="space-y-5">
@@ -122,9 +122,9 @@ function ImportedDashboardSection({
             가져온 데이터 기반 PCF 대시보드
           </h2>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            업로드한 엑셀 활동 데이터에서 계산된 KPI와 Scope 분포입니다.
-            기본 대시보드(<code className="font-mono text-xs">/</code>)의
-            시드 데이터와 합산되지 않습니다.
+            업로드한 엑셀 활동 데이터에서 계산된 KPI와 Scope 분포입니다. 기본
+            대시보드(<code className="font-mono text-xs">/</code>)의 시드
+            데이터와 합산되지 않습니다.
           </p>
         </div>
 
@@ -162,9 +162,9 @@ function ImportedEmptyState() {
           아직 가져온 활동 데이터가 없습니다.
         </p>
         <p className="leading-6 text-neutral-500 dark:text-neutral-400">
-          위에서 Excel 파일을 업로드하면 가져온 데이터 기반 PCF 대시보드가
-          이 영역에 표시됩니다. 시드 데이터는 합산되지 않으며, 업로드된
-          활동만 KPI·Scope 분포·월별 추이에 반영됩니다.
+          위에서 Excel 파일을 업로드하면 가져온 데이터 기반 PCF 대시보드가 이
+          영역에 표시됩니다. 시드 데이터는 합산되지 않으며, 업로드된 활동만
+          KPI·Scope 분포·월별 추이에 반영됩니다.
         </p>
       </div>
     </Card>
@@ -203,14 +203,16 @@ function ImportPageHeader() {
         </h1>
 
         <p className="mt-1 text-sm text-neutral-600 sm:text-base dark:text-neutral-300">
-          CT-045 활동 데이터를 담은 Excel 파일 업로드 · 가져온 데이터 기반 PCF 재계산
+          CT-045 활동 데이터를 담은 Excel 파일 업로드 · 가져온 데이터 기반 PCF
+          재계산
         </p>
 
         <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-500 dark:text-neutral-400">
           업로드된 파일은 파싱되어 SQLite에 적재되고, 동일한 계산 파이프라인을
           거쳐 아래의 KPI · Scope 분포 · 월별 추이 · 활동 테이블로 다시
-          렌더링됩니다. 시드 기반 기본 대시보드(<code className="font-mono text-xs">/</code>)와는
-          데이터 소스가 분리되어 있어 이중 집계가 발생하지 않습니다.
+          렌더링됩니다. 시드 기반 기본 대시보드(
+          <code className="font-mono text-xs">/</code>)와는 데이터 소스가
+          분리되어 있어 이중 집계가 발생하지 않습니다.
         </p>
       </div>
     </header>

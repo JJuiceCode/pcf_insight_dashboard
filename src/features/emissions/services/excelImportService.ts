@@ -19,6 +19,7 @@
 import * as XLSX from 'xlsx';
 
 import {
+  deleteActivitiesByProductId,
   replaceActivitiesForProductId,
   type CreateActivityInput,
 } from '../repositories/activityRepository';
@@ -156,6 +157,29 @@ export async function importExcelActivities(
     totalRows: nonEmptyRowCount,
     sheetName,
   };
+}
+
+/**
+ * 가져온 활동 데이터를 모두 비운다.
+ *
+ * `/import` 페이지의 "엑셀 데이터 지우기" 워크플로우에서 사용한다.
+ * `productId` 범위의 ActivityRecord만 삭제하고, EmissionFactor 테이블에는
+ * 손대지 않아 버전 히스토리는 보존된다.
+ *
+ * 반환값의 `deletedCount`는 실제로 삭제된 행 수다. 호출 시점에 0건이면 0이 반환된다.
+ */
+export async function clearImportedActivities(
+  productId: string,
+): Promise<{ deletedCount: number }> {
+  const deletedCount = await deleteActivitiesByProductId(productId);
+
+  if (isDev) {
+    console.log(
+      `[excel-import] clear: deleted=${deletedCount} for productId=${productId}`,
+    );
+  }
+
+  return { deletedCount };
 }
 
 /**

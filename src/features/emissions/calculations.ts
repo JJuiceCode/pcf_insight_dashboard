@@ -45,30 +45,39 @@ import type {
 import { ACTIVITY_TYPES, GHG_SCOPES } from './types';
 
 /**
-
- * 활동 레코드에 적용할 배출계수를 찾는다.
-
+ * 활동 유형과 설명 값을 기준으로 배출계수를 찾는다.
  *
-
- * 매칭 키: `activityType` + `description` (계수의 `name`과 비교).
-
+ * 입력 폼 미리보기와 계산 로직이
+ * 동일한 매칭 규칙을 사용하도록 공통 유틸로 분리한다.
  *
-
- * 실제 SaaS 탄소회계는 ID·카탈로그·적용 기간으로 계수를 고른다.
-
- * 이 시드 데이터는 1단계 구현으로 설명 문자열(description)로 매칭한다.
-
+ * 현재 시드 데이터는 `activityType + description` 조합으로 매칭하며,
+ * 실제 서비스에서는 ID, 카탈로그, 적용 기간 등을 함께 고려할 수 있다.
  */
+export function findEmissionFactorByKey(
+  activityType: ActivityType,
 
-export function findEmissionFactorForActivity(
-  activity: ActivityRecord,
+  description: string,
 
   emissionFactors: readonly EmissionFactor[],
 ): EmissionFactor | undefined {
   return emissionFactors.find(
     (factor) =>
-      factor.activityType === activity.activityType &&
-      factor.name === activity.description,
+      factor.activityType === activityType && factor.name === description,
+  );
+}
+
+/** ActivityRecord 기반 배출계수 조회 */
+export function findEmissionFactorForActivity(
+  activity: ActivityRecord,
+
+  emissionFactors: readonly EmissionFactor[],
+): EmissionFactor | undefined {
+  return findEmissionFactorByKey(
+    activity.activityType,
+
+    activity.description,
+
+    emissionFactors,
   );
 }
 
@@ -76,12 +85,9 @@ export function findEmissionFactorForActivity(
 
  * 활동 레코드 한 건의 배출량을 계산한다.
 
- *
-
  * 유효한 경우: 계수를 찾아 배출량을 계산한다.
-
  * 유효하지 않은 경우: 배출량 0, `errorMessage`를 채운다.
-
+ * 
  * 계수 누락으로 생긴 0이 합계에 섞이지 않도록 명시적으로 구분한다.
 
  */
@@ -125,13 +131,9 @@ export function calculateActivityEmission(
 }
 
 /**
-
  * 모든 활동 레코드에 배출 계산을 적용한다.
-
  *
-
  * 입력 순서를 유지해 UI가 활동별 테이블을 다시 정렬하지 않아도 된다.
-
  */
 
 export function calculateActivityRowsWithEmissions(
@@ -159,8 +161,6 @@ export function calculateTotalEmissions(
 /**
 
  * 활동 유형별 배출량.
-
- *
 
  * 합계가 0이어도 모든 활동 유형 키를 반환한다.
 
@@ -192,8 +192,6 @@ export function calculateEmissionsByActivityType(
 
  * GHG Scope별 배출량.
 
- *
-
  * Scope 1 활동 데이터가 없으면 scope1은 0으로 둔다.
 
  * 직접 배출을 검토했으나 제공된 데이터가 없음을 보여 주기 위함이다.
@@ -221,18 +219,13 @@ export function calculateEmissionsByScope(
 }
 
 export interface MonthlyEmission {
-  /** `YYYY-MM` 형식 */
-
   month: string;
-
   emissionKgCO2e: number;
 }
 
 /**
 
  * 달력 월(`YYYY-MM`)별 배출량. 오름차순 정렬.
-
- *
 
  * 월 키는 ISO 날짜 문자열 앞 7자리에서 만든다.
 
@@ -265,20 +258,13 @@ export function calculateEmissionsByMonth(
 }
 
 export interface TopContributor {
-  /** 설명/계수 이름 (예: "플라스틱 1"). */
-
   name: string;
-
   activityType: ActivityType;
-
   emissionKgCO2e: number;
 }
 
 /**
-
  * 유효한 행 가운데 배출 기여가 가장 큰 설명(예: "플라스틱 1")을 반환한다.
-
- *
 
  * 유효한 행이 없으면 `null`을 반환해,
 
@@ -332,8 +318,6 @@ export function calculateTopContributor(
 
  * 배출량이 가장 큰 월(`YYYY-MM`).
 
- *
-
  * 유효한 행이 없으면 `null`을 반환한다.
 
  */
@@ -363,11 +347,8 @@ export function kgToTonnes(kg: number): number {
 }
 
 /**
-
- * UI가 활동 유형·Scope를 고정 순서로 순회할 수 있도록
-
- * `types`의 상수 목록을 다시 export한다.
-
+ * UI가 활동 유형과 Scope를 동일한 순서로 렌더링할 수 있도록
+ * 도메인 상수 목록을 다시 공개한다.
  */
 
 export { ACTIVITY_TYPES, GHG_SCOPES };

@@ -38,11 +38,11 @@ export function DashboardSummary({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           accent
-          label="Total PCF"
+          label="총 탄소 배출량(PCF)"
           value={formatTCO2e(totalKgCO2e)}
           supportingValue={formatKgCO2e(totalKgCO2e)}
           badge="CT-045"
-          description="Total cradle-to-gate emissions across the reporting period."
+          description="보고 기간 전체의 총 탄소 배출량"
         />
 
         <KpiCard
@@ -53,23 +53,23 @@ export function DashboardSummary({
         />
 
         <KpiCard
-          label="Top contributor"
+          label="최대 배출 기여 항목"
           value={topContributor ? topContributor.name : EMPTY}
           supportingValue={
             topContributor
               ? formatKgCO2e(topContributor.emissionKgCO2e)
               : undefined
           }
-          description="Largest single emission source across all activities."
+          description="전체 활동 중 가장 큰 배출 기여 항목"
         />
 
         <KpiCard
-          label="Peak month"
+          label="배출량 최대 월"
           value={peakMonth ? formatMonth(peakMonth.month) : EMPTY}
           supportingValue={
             peakMonth ? formatKgCO2e(peakMonth.emissionKgCO2e) : undefined
           }
-          description="Month with the highest aggregated emissions."
+          description="배출량이 가장 높았던 월"
         />
       </div>
     </section>

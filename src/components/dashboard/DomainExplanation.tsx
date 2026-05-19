@@ -18,23 +18,23 @@ const SCOPES: readonly ScopeExplanation[] = [
   {
     scope: 'Scope 1',
     variant: 'neutral',
-    title: 'Direct emissions',
+    title: '직접 배출',
     description:
-      'On-site fuel combustion, owned facilities, owned vehicles. Shown as 0 because the CT-045 dataset provides no direct emission activities.',
+      '사업장 내 연료 사용, 자체 시설, 보유 차량 등에서 발생하는 직접 배출입니다. CT-045 데이터에는 해당 활동이 없어 현재는 0으로 표시됩니다.',
   },
   {
     scope: 'Scope 2',
     variant: 'accent',
-    title: 'Purchased electricity',
+    title: '구매 전력',
     description:
-      'Indirect emissions from grid electricity used during manufacturing — applied via the 한국전력 emission factor.',
+      '제품 생산 과정에서 사용된 전력으로 인해 발생하는 간접 배출입니다. 현재는 한국전력 배출계수를 적용합니다.',
   },
   {
     scope: 'Scope 3',
     variant: 'neutral',
-    title: 'Upstream materials & logistics',
+    title: '원소재 및 물류',
     description:
-      'Emissions embedded in raw materials (플라스틱 1, 플라스틱 2) and indirect transport (트럭 ton-km).',
+      '원소재(플라스틱 1, 플라스틱 2)와 운송(트럭 ton-km) 과정에서 발생하는 간접 배출입니다.',
   },
 ];
 
@@ -44,41 +44,39 @@ export function DomainExplanation() {
       <Card>
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-wider text-orange-600 dark:text-orange-400">
-              What you are looking at
+            <p className="text-[11px] font-medium tracking-wider text-orange-600 uppercase dark:text-orange-400">
+              PCF 개요
             </p>
             <h2
               id="domain-explanation-title"
               className="mt-1 text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
             >
-              Understanding this Product Carbon Footprint
+              제품 탄소발자국 이해하기
             </h2>
           </div>
           <Badge variant="accent">CT-045 Monitor</Badge>
         </header>
 
         <p className="mt-4 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-          A{' '}
+          {' '}
           <strong className="font-semibold text-neutral-900 dark:text-neutral-50">
-            Product Carbon Footprint (PCF)
+            제품 탄소발자국(Product Carbon Footprint, PCF)
           </strong>{' '}
-          is the total greenhouse gas emissions associated with making the
-          CT-045 Computer Monitor, expressed in kgCO2e. Each activity record is
-          converted into emissions using a versioned emission factor:
+          은 제품 생산 과정에서 발생하는 전체 온실가스 배출량을 의미하며, kgCO2e
+          단위로 표현합니다. 각 활동 데이터는 버전 관리된 배출계수를 적용해 최종
+          배출량으로 변환됩니다.
         </p>
 
         <p className="mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-mono text-[13px] text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-200">
-          <span>emissions (kgCO2e)</span>
+          <span>배출량 (kgCO2e)</span>
           <span aria-hidden className="text-neutral-400 dark:text-neutral-500">
             =
           </span>
-          <span>activity amount</span>
+          <span>활동량</span>
           <span aria-hidden className="text-neutral-400 dark:text-neutral-500">
             ×
           </span>
-          <span className="text-orange-600 dark:text-orange-400">
-            emission factor
-          </span>
+          <span className="text-orange-600 dark:text-orange-400">배출계수</span>
         </p>
 
         <ul className="mt-5 grid gap-3 sm:grid-cols-3">

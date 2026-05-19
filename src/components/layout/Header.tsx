@@ -9,7 +9,7 @@ export function Header() {
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+            className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-medium tracking-wider text-orange-700 uppercase dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
             aria-label="Product code"
           >
             <span
@@ -19,21 +19,21 @@ export function Header() {
             CT-045
           </span>
           <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            Reporting period · Jan – Aug 2025
+            보고 기간 · 2025.01 ~ 2025.08
           </span>
         </div>
 
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-3xl">
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl dark:text-neutral-50">
           PCF Insight Dashboard
         </h1>
 
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300 sm:text-base">
-          Product Carbon Footprint overview for CT-045 Computer Monitor
+        <p className="mt-1 text-sm text-neutral-600 sm:text-base dark:text-neutral-300">
+          CT-045 컴퓨터 모니터 제품 탄소발자국 현황
         </p>
 
         <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-          Activity data is matched with versioned emission factors to calculate
-          kgCO2e and classify emissions by GHG Scope.
+          활동 데이터를 기반으로 배출량(kgCO2e)을 계산하고, GHG Scope 기준에
+          따라 배출 구조를 분석합니다.
         </p>
       </div>
     </header>

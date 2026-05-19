@@ -51,23 +51,23 @@ export function EmissionsOverview({
     <section aria-label="Emissions overview">
       <div className="grid gap-4 lg:grid-cols-3">
         <BreakdownCard
-          title="By activity type"
-          caption="Share of total kgCO2e"
+          title="활동 유형별 배출량"
+          caption="총 배출량 대비 비중"
           rows={emissionsByActivityType}
           highlightedLabel={topActivity?.label}
         />
 
         <BreakdownCard
-          title="By GHG Scope"
-          caption="Scope 1 is shown as 0 — no direct activity data."
+          title="GHG Scope별 배출량"
+          caption="직접 배출 활동 데이터가 없어 Scope 1은 0으로 표시됩니다."
           rows={emissionsByScope}
           highlightedLabel={topScope?.label}
         />
 
         <Card aria-labelledby="overview-monthly-title">
           <CardHeader
-            title="Monthly emissions"
-            caption="Bars scale against the peak month."
+            title="월별 배출량 추이"
+            caption="막대 크기는 최대 배출 월을 기준으로 표시됩니다."
             id="overview-monthly-title"
           />
           <ul className="mt-4 space-y-3">
@@ -154,7 +154,7 @@ function BreakdownRow({
         <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
           {row.label}
         </span>
-        <span className="text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
+        <span className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
           {formatKgCO2e(row.emissionKgCO2e)}
         </span>
       </div>
@@ -201,7 +201,7 @@ function MonthlyRow({
         >
           {formatMonth(row.month)}
         </span>
-        <span className="text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
+        <span className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
           {formatKgCO2e(row.emissionKgCO2e)}
         </span>
       </div>

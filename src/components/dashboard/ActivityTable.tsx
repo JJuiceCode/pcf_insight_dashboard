@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import {
   formatActivityTypeLabel,
   formatKgCO2e,
@@ -20,11 +21,13 @@ import { cn } from '@/lib/utils';
  */
 export interface ActivityTableProps {
   rows: readonly CalculatedEmissionRow[];
+  /** Optional action wired to the section header ("Add activity"). */
+  onAddClick?: () => void;
 }
 
 const PLACEHOLDER = '—';
 
-export function ActivityTable({ rows }: ActivityTableProps) {
+export function ActivityTable({ rows, onAddClick }: ActivityTableProps) {
   const invalidCount = rows.reduce(
     (count, row) => (row.isValid ? count : count + 1),
     0,
@@ -48,13 +51,24 @@ export function ActivityTable({ rows }: ActivityTableProps) {
               각 활동의 계산 결과를 검증하는 읽기 전용 뷰.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="neutral">{rows.length} 건</Badge>
             {invalidCount > 0 ? (
               <Badge variant="warning">{invalidCount} 검토 필요</Badge>
             ) : (
-              <Badge variant="success">모두 매칭됨됨</Badge>
+              <Badge variant="success">모두 매칭됨</Badge>
             )}
+            {onAddClick ? (
+              <Button
+                variant="primary"
+                onClick={onAddClick}
+                className="ml-1"
+                aria-label="활동 추가"
+              >
+                <span aria-hidden className="text-base leading-none">+</span>
+                활동 추가
+              </Button>
+            ) : null}
           </div>
         </header>
 

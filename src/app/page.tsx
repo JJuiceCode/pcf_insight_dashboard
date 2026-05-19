@@ -1,3 +1,4 @@
+import { ActivityTable } from '@/components/dashboard/ActivityTable';
 import { DashboardSummary } from '@/components/dashboard/DashboardSummary';
 import { DomainExplanation } from '@/components/dashboard/DomainExplanation';
 import {
@@ -96,6 +97,8 @@ export default function Home() {
           emissionsByScope={scopeRows}
           monthlyEmissions={monthlyEmissions}
         />
+
+        <ActivityTable rows={rows} />
       </div>
     </AppShell>
   );

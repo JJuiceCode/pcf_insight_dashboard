@@ -38,6 +38,19 @@ function formatFixedDecimals(value: number, decimals: number): string {
   });
 }
 
+/**
+ * 테이블 셀용 숫자 포맷터.
+ *
+ * 정수 활동량(`110`)과 소수가 긴 배출계수(`0.456`) 모두에 쓴다.
+ * 끝자리 0은 억지로 맞추지 않고, 원본 정밀도는 유지한 채 천 단위만 구분한다.
+ */
+export function formatNumber(value: number): string {
+  if (!Number.isFinite(value)) return '—';
+  return value.toLocaleString(NUMBER_LOCALE, {
+    maximumFractionDigits: 6,
+  });
+}
+
 /** 예: `11,072.724 kgCO2e` */
 
 export function formatKgCO2e(value: number): string {

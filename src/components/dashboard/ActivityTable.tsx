@@ -67,6 +67,28 @@ const DEFAULT_FILTERS: ActivityTableFilters = {
 };
 
 /**
+ * 운영자가 선택할 수 있는 정렬 키.
+ *
+ * 기본은 "큰 값을 위로" 패턴(`-desc`)이지만, 검토 흐름상
+ * 시계열 처음부터 추적해야 할 때가 있어 날짜는 오름차순(`date-asc`)도 노출한다.
+ */
+type ActivityTableSortKey =
+  | 'emission-desc'
+  | 'date-desc'
+  | 'date-asc'
+  | 'amount-desc';
+
+const DEFAULT_SORT_KEY: ActivityTableSortKey = 'date-desc';
+
+const SORT_OPTIONS: readonly { value: ActivityTableSortKey; label: string }[] =
+  [
+    { value: 'emission-desc', label: 'PCF 높은 순' },
+    { value: 'date-desc', label: '날짜 최신순' },
+    { value: 'date-asc', label: '날짜 오래된순' },
+    { value: 'amount-desc', label: '활동량 높은 순' },
+  ];
+
+/**
  * 도메인에 정의된 알려진 설명 라벨.
  *
  * 현재 데이터에 해당 설명이 없어도 운영자가 즉시 검증할 수 있도록
@@ -85,6 +107,7 @@ export function ActivityTable({
   onAddClick,
 }: ActivityTableProps) {
   const [filters, setFilters] = useState<ActivityTableFilters>(DEFAULT_FILTERS);
+  const [sortKey, setSortKey] = useState<ActivityTableSortKey>(DEFAULT_SORT_KEY);
 
   const monthOptions = useMemo(() => collectMonthOptions(rows), [rows]);
   const descriptionOptions = useMemo(
@@ -95,6 +118,14 @@ export function ActivityTable({
   const filteredRows = useMemo(
     () => filterActivityRows(rows, filters),
     [rows, filters],
+  );
+
+  // 정렬은 항상 필터 결과 위에서 수행한다.
+  // filter → sort 순서로 흐름을 고정해 운영자에게 보이는 카운트(`filteredRows.length`)와
+  // 실제 렌더 행 수가 정확히 일치하도록 한다.
+  const visibleRows = useMemo(
+    () => sortActivityRows(filteredRows, sortKey),
+    [filteredRows, sortKey],
   );
 
   const resetFilters = useCallback(() => {
@@ -157,8 +188,10 @@ export function ActivityTable({
           descriptionOptions={descriptionOptions}
           totalCount={rows.length}
           visibleCount={filteredRows.length}
+          sortKey={sortKey}
           onChange={setFilters}
           onReset={resetFilters}
+          onSortChange={setSortKey}
         />
 
         <div className="overflow-x-auto">
@@ -179,10 +212,10 @@ export function ActivityTable({
               </tr>
             </thead>
             <tbody>
-              {filteredRows.length === 0 ? (
+              {visibleRows.length === 0 ? (
                 <EmptyFilteredRow onReset={resetFilters} />
               ) : (
-                filteredRows.map((row) => (
+                visibleRows.map((row) => (
                   <ActivityRow key={row.activity.id} row={row} />
                 ))
               )}
@@ -244,6 +277,49 @@ function toMonthKey(isoDate: string): string {
   return isoDate.slice(0, 7);
 }
 
+/**
+ * 필터링이 끝난 행을 운영자가 선택한 키로 정렬한다.
+ *
+ * - 원본 배열은 변경하지 않고 항상 복사본을 정렬해 반환한다.
+ * - 모든 옵션은 내림차순이다(큰 값/최신이 위로).
+ * - 값이 같은 행은 `Array.prototype.sort`의 안정 정렬 특성에 따라
+ *   필터링 직후의 상대 순서를 유지한다.
+ * - 잘못된 날짜 문자열은 0으로 처리해 정렬이 throw하지 않게 한다.
+ * - 유효하지 않은 행은 `emissionKgCO2e === 0`이므로 PCF 정렬에서 자연히 아래로 내려간다.
+ *   계산을 다시 수행하지 않으며, scope 등 다른 필드를 검사하지도 않는다.
+ */
+function sortActivityRows(
+  rows: readonly CalculatedEmissionRow[],
+  sortKey: ActivityTableSortKey,
+): CalculatedEmissionRow[] {
+  const copy = [...rows];
+  switch (sortKey) {
+    case 'emission-desc':
+      return copy.sort((a, b) => b.emissionKgCO2e - a.emissionKgCO2e);
+    case 'amount-desc':
+      return copy.sort((a, b) => b.activity.amount - a.activity.amount);
+    case 'date-desc':
+      return copy.sort(
+        (a, b) => parseDateMs(b.activity.date) - parseDateMs(a.activity.date),
+      );
+    case 'date-asc':
+      return copy.sort(
+        (a, b) => parseDateMs(a.activity.date) - parseDateMs(b.activity.date),
+      );
+    default: {
+      // 새 정렬 키가 추가되면 컴파일러가 여기서 잡아준다.
+      const _exhaustive: never = sortKey;
+      return _exhaustive;
+    }
+  }
+}
+
+/** ISO 날짜 문자열을 안전하게 epoch ms로 변환한다. 잘못된 입력은 0. */
+function parseDateMs(isoDate: string): number {
+  const ms = Date.parse(isoDate);
+  return Number.isFinite(ms) ? ms : 0;
+}
+
 /** 행에서 발견된 모든 `YYYY-MM` 월 키를 오름차순 정렬해 반환한다. */
 function collectMonthOptions(
   rows: readonly CalculatedEmissionRow[],
@@ -286,19 +362,23 @@ interface ActivityFilterBarProps {
   descriptionOptions: readonly string[];
   totalCount: number;
   visibleCount: number;
+  sortKey: ActivityTableSortKey;
   onChange: (next: ActivityTableFilters) => void;
   onReset: () => void;
+  onSortChange: (next: ActivityTableSortKey) => void;
 }
 
-/** 테이블 상단 필터 바. 모든 컨트롤은 로컬 상태에만 영향을 준다. */
+/** 테이블 상단 필터·정렬 바. 모든 컨트롤은 로컬 상태에만 영향을 준다. */
 function ActivityFilterBar({
   filters,
   monthOptions,
   descriptionOptions,
   totalCount,
   visibleCount,
+  sortKey,
   onChange,
   onReset,
+  onSortChange,
 }: ActivityFilterBarProps) {
   const filterActive = isFilterActive(filters);
 
@@ -387,32 +467,57 @@ function ActivityFilterBar({
         </FilterField>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <p
-          aria-live="polite"
-          className="text-neutral-500 dark:text-neutral-400"
-        >
-          전체 <span className="tabular-nums">{totalCount}</span>건 중{' '}
-          <span className="font-semibold text-neutral-800 tabular-nums dark:text-neutral-100">
-            {visibleCount}
-          </span>
-          건 표시
-          {filterActive ? (
-            <span className="ml-1.5 text-orange-600 dark:text-orange-400">
-              · 필터 적용 중
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:min-w-[200px]">
+          <label
+            htmlFor="activity-sort"
+            className="text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400"
+          >
+            정렬
+          </label>
+          <Select
+            id="activity-sort"
+            value={sortKey}
+            onChange={(event) =>
+              onSortChange(event.target.value as ActivityTableSortKey)
+            }
+            aria-label="정렬 기준"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:justify-end">
+          <p
+            aria-live="polite"
+            className="text-neutral-500 dark:text-neutral-400"
+          >
+            전체 <span className="tabular-nums">{totalCount}</span>건 중{' '}
+            <span className="font-semibold text-neutral-800 tabular-nums dark:text-neutral-100">
+              {visibleCount}
             </span>
-          ) : null}
-        </p>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={onReset}
-          disabled={!filterActive}
-          aria-label="필터 초기화"
-          className="h-8 px-3 text-xs"
-        >
-          필터 초기화
-        </Button>
+            건 표시
+            {filterActive ? (
+              <span className="ml-1.5 text-orange-600 dark:text-orange-400">
+                · 필터 적용 중
+              </span>
+            ) : null}
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onReset}
+            disabled={!filterActive}
+            aria-label="필터 초기화"
+            className="h-8 px-3 text-xs"
+          >
+            필터 초기화
+          </Button>
+        </div>
       </div>
     </div>
   );

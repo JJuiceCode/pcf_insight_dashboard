@@ -65,10 +65,6 @@ export default async function ImportPage() {
               importedRowCount={activities.length}
             />
           </section>
-
-          <aside aria-label="가져오기 안내" className="space-y-5">
-            <ImportFlowExplanation />
-          </aside>
         </div>
 
         <ImportedDashboardSection

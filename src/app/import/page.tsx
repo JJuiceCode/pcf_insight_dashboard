@@ -3,6 +3,7 @@ import { DashboardView } from '@/components/dashboard/DashboardView';
 import { ImportClient } from '@/components/import/ImportClient';
 import { ImportFlowExplanation } from '@/components/import/ImportFlowExplanation';
 import { AppShell } from '@/components/layout/AppShell';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { IMPORTED_PRODUCT_ID } from '@/features/emissions/constants';
@@ -178,20 +179,24 @@ function ImportPageHeader() {
   return (
     <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <div className="flex flex-wrap items-center gap-2">
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-medium tracking-wider text-orange-700 uppercase dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
-            aria-label="단계 표시"
-          >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <span
-              aria-hidden
-              className="h-1.5 w-1.5 rounded-full bg-orange-500 dark:bg-orange-400"
-            />
-            Step 12 · Import + Recalculate
-          </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            데이터 가져오기 워크플로우
-          </span>
+              className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-medium tracking-wider text-orange-700 uppercase dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+              aria-label="단계 표시"
+            >
+              <span
+                aria-hidden
+                className="h-1.5 w-1.5 rounded-full bg-orange-500 dark:bg-orange-400"
+              />
+              Step 12 · Import + Recalculate
+            </span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              데이터 가져오기 워크플로우
+            </span>
+          </div>
+
+          <ThemeToggle />
         </div>
 
         <h1 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl dark:text-neutral-50">

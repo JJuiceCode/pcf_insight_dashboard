@@ -7,11 +7,12 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const BASE_INPUT =
-  'block w-full rounded-md border bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm transition-colors placeholder:text-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60 read-only:cursor-default dark:bg-neutral-900 dark:text-neutral-50 dark:placeholder:text-neutral-500';
+  'block w-full rounded-md border bg-surface px-3 py-2 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60 read-only:cursor-default';
 
 const DEFAULT_BORDER =
-  'border-neutral-300 focus-visible:border-orange-500 focus-visible:ring-orange-500/40 dark:border-neutral-700';
+  'border-border focus-visible:border-accent focus-visible:ring-accent/30';
 
+// status border: red is intentionally kept so error state stays unambiguous.
 const ERROR_BORDER =
   'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/40 dark:border-red-500/80';
 

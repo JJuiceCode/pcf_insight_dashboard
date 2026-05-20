@@ -35,21 +35,19 @@ export function Sidebar() {
 
   return (
     <aside
-      className="border-b border-neutral-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0 dark:border-neutral-800 dark:bg-neutral-950"
+      className="border-b border-border bg-surface lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-b-0"
       aria-label="주요 네비게이션"
     >
       <div className="flex items-center gap-2 px-4 py-4 lg:px-6 lg:py-6">
         <span
           aria-hidden
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:bg-orange-500/15 dark:text-orange-400 dark:ring-orange-500/30"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-accent-soft text-accent ring-1 ring-accent/20"
         >
           <span className="text-sm font-semibold tracking-tight">PCF</span>
         </span>
         <div className="leading-tight">
-          <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-            Insight
-          </p>
-          <p className="text-[11px] tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+          <p className="text-sm font-semibold text-foreground">Insight</p>
+          <p className="text-[11px] tracking-wider text-muted uppercase">
             CT-045 Monitor
           </p>
         </div>
@@ -71,10 +69,8 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="hidden border-t border-neutral-200 px-6 py-4 text-[11px] text-neutral-500 lg:block dark:border-neutral-800 dark:text-neutral-400">
-        <p className="font-medium text-neutral-700 dark:text-neutral-300">
-          보고 기간
-        </p>
+      <div className="hidden border-t border-border px-6 py-4 text-[11px] text-muted lg:block">
+        <p className="font-medium text-foreground">보고 기간</p>
         <p className="mt-0.5">2025년 1월 ~ 8월</p>
       </div>
     </aside>
@@ -94,23 +90,16 @@ function isItemActive(pathname: string | null, item: NavItem): boolean {
 
 function SidebarLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
   const base =
-    'flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500';
+    'flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
   if (isActive) {
     return (
       <Link
         href={item.href}
         aria-current="page"
-        className={cn(
-          base,
-          'bg-orange-50 text-orange-700 ring-1 ring-orange-200',
-          'dark:bg-orange-950/40 dark:text-orange-300 dark:ring-orange-900/60',
-        )}
+        className={cn(base, 'bg-accent-soft text-accent ring-1 ring-accent/20')}
       >
-        <span
-          aria-hidden
-          className="h-1.5 w-1.5 rounded-full bg-orange-500 dark:bg-orange-400"
-        />
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
         {item.label}
       </Link>
     );
@@ -121,14 +110,10 @@ function SidebarLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
       href={item.href}
       className={cn(
         base,
-        'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
-        'dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-50',
+        'text-muted hover:bg-accent-soft hover:text-accent',
       )}
     >
-      <span
-        aria-hidden
-        className="h-1.5 w-1.5 rounded-full bg-neutral-300 dark:bg-neutral-700"
-      />
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-muted/50" />
       {item.label}
     </Link>
   );

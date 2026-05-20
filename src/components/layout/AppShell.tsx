@@ -16,7 +16,7 @@ interface AppShellProps {
  */
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] dark:bg-neutral-950 dark:text-neutral-100">
+    <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
       <Sidebar />
       <main className="min-w-0">{children}</main>
     </div>

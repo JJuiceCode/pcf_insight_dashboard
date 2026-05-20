@@ -32,18 +32,18 @@ function ImportSuccessCard({ result }: { result: ExcelImportResult }) {
     <Card aria-labelledby="import-result-title" className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-medium tracking-wider text-orange-600 uppercase dark:text-orange-400">
+          <p className="text-[11px] font-medium tracking-wider text-accent uppercase">
             가져오기 결과
           </p>
           <h3
             id="import-result-title"
-            className="mt-1 text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+            className="mt-1 text-base font-semibold tracking-tight text-foreground"
           >
             {wasReplaced
               ? '기존 데이터를 새 파일로 교체했습니다'
               : '가져오기가 완료되었습니다'}
           </h3>
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-xs text-muted">
             가져온 행이 아래 대시보드에 즉시 반영되었습니다.
           </p>
         </div>
@@ -73,7 +73,7 @@ function ImportSuccessCard({ result }: { result: ExcelImportResult }) {
         />
       </dl>
 
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+      <p className="text-xs text-muted">
         가져오기는 교체 방식으로 동작합니다. 같은 제품의 기존 활동 데이터는
         새 엑셀의 행으로 완전히 대체되며, 배출계수 히스토리는 그대로 유지됩니다.
         {result.skippedCount > 0
@@ -85,6 +85,8 @@ function ImportSuccessCard({ result }: { result: ExcelImportResult }) {
 }
 
 function ImportErrorCard({ message }: { message: string }) {
+  // status colors (red) are intentionally kept here: a failed import must
+  // remain visually distinct from the accent-themed success card.
   return (
     <Card
       aria-labelledby="import-error-title"
@@ -97,7 +99,7 @@ function ImportErrorCard({ message }: { message: string }) {
           </p>
           <h3
             id="import-error-title"
-            className="mt-1 text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+            className="mt-1 text-base font-semibold tracking-tight text-foreground"
           >
             가져오기에 실패했습니다
           </h3>
@@ -111,7 +113,7 @@ function ImportErrorCard({ message }: { message: string }) {
       >
         {message}
       </p>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+      <p className="text-xs text-muted">
         파일을 다시 확인한 뒤 가져오기를 재시도해 주세요. 선택한 파일은 그대로
         유지됩니다.
       </p>
@@ -133,19 +135,13 @@ function ResultRow({
   mono?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950/40">
-      <dt className="text-xs text-neutral-500 dark:text-neutral-400">
-        {label}
-      </dt>
+    <div className="flex items-baseline justify-between gap-3 rounded-xl border border-border bg-background/60 px-4 py-3">
+      <dt className="text-xs text-muted">{label}</dt>
       <dd
         className={[
           'text-sm font-semibold',
           mono ? 'tabular-nums' : '',
-          accent
-            ? 'text-orange-600 dark:text-orange-400'
-            : muted
-              ? 'text-neutral-500 dark:text-neutral-400'
-              : 'text-neutral-900 dark:text-neutral-50',
+          accent ? 'text-accent' : muted ? 'text-muted' : 'text-foreground',
         ]
           .filter(Boolean)
           .join(' ')}

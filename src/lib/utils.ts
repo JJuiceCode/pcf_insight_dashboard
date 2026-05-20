@@ -4,7 +4,7 @@
  * 예시:
  *   className={cn(
  *     'base-class',
- *     isActive && 'text-orange-500',
+ *     isActive && 'text-accent',
  *     disabled && 'opacity-50',
  *   )}
  */

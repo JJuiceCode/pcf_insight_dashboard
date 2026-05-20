@@ -52,11 +52,11 @@ export default async function ImportPage() {
             <div>
               <h2
                 id="import-upload-title"
-                className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+                className="text-lg font-semibold tracking-tight text-foreground"
               >
                 Excel 파일 업로드
               </h2>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="mt-1 text-sm text-muted">
                 활동 데이터를 담은 엑셀 파일을 선택해 가져오기를 실행하면 아래에
                 가져온 데이터 기반 대시보드가 함께 갱신됩니다.
               </p>
@@ -102,23 +102,21 @@ function ImportedDashboardSection({
   return (
     <section
       aria-labelledby="imported-dashboard-title"
-      className="space-y-5 border-t border-neutral-200 pt-8 dark:border-neutral-800"
+      className="space-y-5 border-t border-border pt-8"
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="accent">가져온 데이터 기반</Badge>
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-              CT-045 · Excel Import
-            </span>
+            <span className="text-xs text-muted">CT-045 · Excel Import</span>
           </div>
           <h2
             id="imported-dashboard-title"
-            className="mt-2 text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+            className="mt-2 text-lg font-semibold tracking-tight text-foreground"
           >
             가져온 데이터 기반 PCF 대시보드
           </h2>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-sm text-muted">
             업로드한 엑셀 활동 데이터에서 계산된 KPI와 Scope 분포입니다. 기본
             대시보드(<code className="font-mono text-xs">/</code>)의 시드
             데이터와 합산되지 않습니다.
@@ -126,9 +124,9 @@ function ImportedDashboardSection({
         </div>
 
         {hasImportedData ? (
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+          <span className="text-xs text-muted">
             적재된 활동 레코드:{' '}
-            <strong className="text-neutral-700 dark:text-neutral-200">
+            <strong className="text-foreground">
               {importedRowCount.toLocaleString('ko-KR')}건
             </strong>
           </span>
@@ -152,13 +150,13 @@ function ImportedDashboardSection({
  */
 function ImportedEmptyState() {
   return (
-    <Card className="border-dashed bg-neutral-50/60 dark:bg-neutral-950/40">
-      <div className="flex flex-col items-start gap-3 text-sm text-neutral-600 dark:text-neutral-300">
+    <Card className="border-dashed bg-background/60">
+      <div className="flex flex-col items-start gap-3 text-sm text-foreground/80">
         <Badge variant="neutral">데이터 없음</Badge>
-        <p className="text-base font-medium text-neutral-800 dark:text-neutral-100">
+        <p className="text-base font-medium text-foreground">
           아직 가져온 활동 데이터가 없습니다.
         </p>
-        <p className="leading-6 text-neutral-500 dark:text-neutral-400">
+        <p className="leading-6 text-muted">
           위에서 Excel 파일을 업로드하면 가져온 데이터 기반 PCF 대시보드가 이
           영역에 표시됩니다. 시드 데이터는 합산되지 않으며, 업로드된 활동만
           KPI·Scope 분포·월별 추이에 반영됩니다.
@@ -177,21 +175,18 @@ function ImportedEmptyState() {
  */
 function ImportPageHeader() {
   return (
-    <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+    <header className="border-b border-border bg-surface">
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <span
-              className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-medium tracking-wider text-orange-700 uppercase dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent-soft px-2.5 py-1 text-[11px] font-medium tracking-wider text-accent uppercase"
               aria-label="단계 표시"
             >
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 rounded-full bg-orange-500 dark:bg-orange-400"
-              />
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
               Step 12 · Import + Recalculate
             </span>
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            <span className="text-xs text-muted">
               데이터 가져오기 워크플로우
             </span>
           </div>
@@ -199,16 +194,16 @@ function ImportPageHeader() {
           <ThemeToggle />
         </div>
 
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl dark:text-neutral-50">
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           데이터 가져오기
         </h1>
 
-        <p className="mt-1 text-sm text-neutral-600 sm:text-base dark:text-neutral-300">
+        <p className="mt-1 text-sm text-foreground/80 sm:text-base">
           CT-045 활동 데이터를 담은 Excel 파일 업로드 · 가져온 데이터 기반 PCF
           재계산
         </p>
 
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-500 dark:text-neutral-400">
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
           업로드된 파일은 파싱되어 SQLite에 적재되고, 동일한 계산 파이프라인을
           거쳐 아래의 KPI · Scope 분포 · 월별 추이 · 활동 테이블로 다시
           렌더링됩니다. 시드 기반 기본 대시보드(

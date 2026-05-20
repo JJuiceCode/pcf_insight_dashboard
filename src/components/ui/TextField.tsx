@@ -37,15 +37,11 @@ export function TextField({
     <div>
       <label
         htmlFor={htmlFor}
-        className="mb-1.5 flex items-center gap-1 text-xs font-medium text-neutral-700 dark:text-neutral-300"
+        className="mb-1.5 flex items-center gap-1 text-xs font-medium text-foreground"
       >
         <span>{label}</span>
         {required ? (
-          <span
-            aria-hidden
-            className="text-orange-600 dark:text-orange-400"
-            title="필수 입력"
-          >
+          <span aria-hidden className="text-accent" title="필수 입력">
             *
           </span>
         ) : null}
@@ -56,9 +52,7 @@ export function TextField({
       {error ? (
         <FormError>{error}</FormError>
       ) : hint ? (
-        <p className="mt-1 ml-1 text-xs text-neutral-500 dark:text-neutral-400">
-          {hint}
-        </p>
+        <p className="mt-1 ml-1 text-xs text-muted">{hint}</p>
       ) : null}
     </div>
   );

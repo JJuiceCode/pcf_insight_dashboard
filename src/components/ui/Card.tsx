@@ -15,7 +15,7 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const BASE_CARD =
-  'rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900';
+  'rounded-2xl border border-border bg-surface p-5 shadow-sm';
 
 export function Card({ children, className, ...rest }: CardProps) {
   return (

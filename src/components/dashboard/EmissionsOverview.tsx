@@ -139,23 +139,17 @@ function SectionHeader({
     <div>
       <h3
         id={id}
-        className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+        className="text-sm font-semibold tracking-tight text-foreground"
       >
         {title}
       </h3>
-      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-        {caption}
-      </p>
+      <p className="mt-1 text-xs text-muted">{caption}</p>
     </div>
   );
 }
 
 function EmptyState({ children }: { children: ReactNode }) {
-  return (
-    <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">
-      {children}
-    </p>
-  );
+  return <p className="mt-4 text-sm text-muted">{children}</p>;
 }
 
 function BreakdownRow({
@@ -169,10 +163,8 @@ function BreakdownRow({
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
-          {row.label}
-        </span>
-        <span className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
+        <span className="text-sm font-medium text-foreground">{row.label}</span>
+        <span className="text-xs text-muted tabular-nums">
           {formatKgCO2e(row.emissionKgCO2e)}
         </span>
       </div>
@@ -183,9 +175,7 @@ function BreakdownRow({
         <span
           className={cn(
             'w-12 shrink-0 text-right text-xs tabular-nums',
-            isHighlighted
-              ? 'font-medium text-orange-700 dark:text-orange-300'
-              : 'text-neutral-500 dark:text-neutral-400',
+            isHighlighted ? 'font-medium text-accent' : 'text-muted',
           )}
         >
           {formatPercentage(row.percentage)}
@@ -212,14 +202,12 @@ function MonthlyRow({
         <span
           className={cn(
             'text-sm font-medium',
-            isPeak
-              ? 'text-orange-700 dark:text-orange-300'
-              : 'text-neutral-900 dark:text-neutral-50',
+            isPeak ? 'text-accent' : 'text-foreground',
           )}
         >
           {formatMonth(row.month)}
         </span>
-        <span className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
+        <span className="text-xs text-muted tabular-nums">
           {formatKgCO2e(row.emissionKgCO2e)}
         </span>
       </div>
@@ -240,7 +228,7 @@ function ProgressTrack({
   return (
     <div
       className={cn(
-        'h-2 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800',
+        'h-2 w-full overflow-hidden rounded-full bg-accent-soft',
         className,
       )}
     >
@@ -260,9 +248,7 @@ function ProgressFill({
     <div
       className={cn(
         'h-2 rounded-full transition-[width] duration-300',
-        isAccent
-          ? 'bg-orange-500 dark:bg-orange-400'
-          : 'bg-neutral-300 dark:bg-neutral-600',
+        isAccent ? 'bg-accent' : 'bg-muted/40',
       )}
       style={{ width: `${widthPercent}%` }}
       aria-hidden

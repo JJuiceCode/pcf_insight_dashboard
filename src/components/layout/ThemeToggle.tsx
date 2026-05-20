@@ -39,12 +39,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-pressed={mounted ? isDark : undefined}
       title={mounted ? nextLabel : undefined}
       className={cn(
-        'inline-flex h-9 w-9 items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-600 transition-colors',
-        'hover:border-accent/40 hover:bg-accent-soft hover:text-accent-dark',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white',
-        'dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300',
-        'dark:hover:border-accent/40 dark:hover:bg-accent-soft dark:hover:text-accent',
-        'dark:focus-visible:ring-offset-neutral-900',
+        'inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-muted transition-colors',
+        'hover:border-accent/40 hover:bg-accent-soft hover:text-accent',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,
       )}
     >

@@ -57,15 +57,11 @@ export function DateInput({
     <div>
       <label
         htmlFor={id}
-        className="mb-1.5 flex items-center gap-1 text-xs font-medium text-neutral-700 dark:text-neutral-300"
+        className="mb-1.5 flex items-center gap-1 text-xs font-medium text-foreground"
       >
         <span>{label}</span>
         {required ? (
-          <span
-            aria-hidden
-            title="필수 입력"
-            className="text-orange-600 dark:text-orange-400"
-          >
+          <span aria-hidden title="필수 입력" className="text-accent">
             *
           </span>
         ) : null}
@@ -73,9 +69,10 @@ export function DateInput({
 
       <div
         className={cn(
-          'relative flex items-center rounded-xl border bg-white shadow-sm transition-colors',
-          'border-neutral-300 dark:border-neutral-700 dark:bg-neutral-950',
-          'focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20',
+          'relative flex items-center rounded-xl border bg-surface shadow-sm transition-colors',
+          'border-border',
+          'focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20',
+          // status border: red is intentionally kept for invalid state.
           invalid &&
             'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/20 dark:border-red-500/80',
         )}
@@ -92,8 +89,8 @@ export function DateInput({
           aria-required={required || undefined}
           className={cn(
             // 래퍼가 시각적 테두리를 담당하므로 input 자체는 투명·아웃라인 없음.
-            'block w-full bg-transparent px-3 py-2 pr-10 text-sm text-neutral-900 outline-none',
-            'placeholder:text-neutral-400 dark:text-neutral-50 dark:placeholder:text-neutral-500',
+            'block w-full bg-transparent px-3 py-2 pr-10 text-sm text-foreground outline-none',
+            'placeholder:text-muted',
             // 우측에 네이티브 picker indicator를 절대 배치로 깔아두고 투명 처리.
             // 사용자에게는 우리가 그린 아이콘만 보이지만, 클릭 시 브라우저 달력이 열린다.
             '[&::-webkit-calendar-picker-indicator]:absolute',
@@ -109,17 +106,14 @@ export function DateInput({
 
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-neutral-500 dark:text-neutral-400"
+          className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-muted"
         >
           <CalendarIcon className="h-4 w-4" />
         </span>
       </div>
 
       {hint ? (
-        <p
-          id={hintId}
-          className="mt-1 ml-1 text-xs text-neutral-500 dark:text-neutral-400"
-        >
+        <p id={hintId} className="mt-1 ml-1 text-xs text-muted">
           {hint}
         </p>
       ) : null}

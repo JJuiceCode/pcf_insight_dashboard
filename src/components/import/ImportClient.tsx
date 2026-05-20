@@ -194,7 +194,7 @@ export function ImportClient({
       />
 
       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="text-xs text-muted">
           가져오기를 실행하면 같은 제품의 기존 가져오기 데이터가 새 엑셀 파일로
           완전히 교체됩니다.
         </p>
@@ -265,29 +265,31 @@ function ImportClearSection({
   return (
     <Card
       aria-labelledby="import-clear-title"
-      className="border-dashed bg-neutral-50/60 dark:bg-neutral-950/40"
+      className="border-dashed bg-background/60"
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="warning">위험</Badge>
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            <span className="text-xs text-muted">
               현재 가져온 데이터: {importedRowCount.toLocaleString('ko-KR')}건
             </span>
           </div>
           <h3
             id="import-clear-title"
-            className="mt-2 text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+            className="mt-2 text-base font-semibold tracking-tight text-foreground"
           >
             엑셀 데이터 지우기
           </h3>
-          <p className="mt-1 text-sm leading-6 text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-sm leading-6 text-muted">
             가져온 ActivityRecord만 삭제됩니다. 시드 데이터(<code className="font-mono text-xs">/</code>)와
             배출계수 히스토리는 영향을 받지 않습니다.
           </p>
         </div>
 
         {!isConfirming && !isDeleting ? (
+          // Destructive action button: red is intentionally kept so the
+          // delete affordance reads as dangerous in both light and dark themes.
           <Button
             type="button"
             variant="secondary"

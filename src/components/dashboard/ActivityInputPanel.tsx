@@ -63,7 +63,10 @@ export function ActivityInputPanel({
         tabIndex={-1}
         onClick={onClose}
         className={cn(
-          'fixed inset-0 z-40 cursor-default bg-neutral-900/40 backdrop-blur-sm transition-opacity duration-200 dark:bg-black/60',
+          // Backdrop overlay: intentionally a hardcoded dark scrim in both
+          // themes — a tinted overlay must remain dark even in dark mode
+          // to convey "page behind is dimmed".
+          'fixed inset-0 z-40 cursor-default bg-black/40 backdrop-blur-sm transition-opacity duration-200 dark:bg-black/60',
           isOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       />
@@ -74,22 +77,22 @@ export function ActivityInputPanel({
         aria-labelledby="activity-panel-title"
         aria-hidden={!isOpen}
         className={cn(
-          'fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300 ease-out sm:max-w-lg dark:bg-neutral-900',
+          'fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-surface shadow-2xl transition-transform duration-300 ease-out sm:max-w-lg',
           isOpen ? 'translate-x-0' : 'translate-x-full',
         )}
       >
-        <header className="flex items-start justify-between gap-3 border-b border-neutral-200 px-5 py-4 sm:px-6 dark:border-neutral-800">
+        <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
           <div>
-            <p className="text-[11px] font-medium tracking-wider text-orange-600 uppercase dark:text-orange-400">
+            <p className="text-[11px] font-medium tracking-wider text-accent uppercase">
               새 활동
             </p>
             <h2
               id="activity-panel-title"
-              className="mt-1 text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+              className="mt-1 text-base font-semibold tracking-tight text-foreground"
             >
               활동 데이터 추가
             </h2>
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="mt-1 text-xs text-muted">
               매칭된 배출계수와 예상 배출량을 제출 전에 미리 확인할 수 있습니다.
             </p>
           </div>
@@ -97,7 +100,7 @@ export function ActivityInputPanel({
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="-mr-1.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
+            className="-mr-1.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-muted transition-colors hover:bg-accent-soft hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <span aria-hidden>×</span>
           </button>

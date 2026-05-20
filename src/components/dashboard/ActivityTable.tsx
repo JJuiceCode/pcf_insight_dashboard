@@ -139,19 +139,19 @@ export function ActivityTable({
 
   return (
     <section aria-labelledby="activity-table-title">
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
+      <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <p className="text-[11px] font-medium tracking-wider text-orange-600 uppercase dark:text-orange-400">
+            <p className="text-[11px] font-medium tracking-wider text-accent uppercase">
               계산 검증
             </p>
             <h3
               id="activity-table-title"
-              className="mt-1 text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+              className="mt-1 text-base font-semibold tracking-tight text-foreground"
             >
               활동 데이터 및 배출계수 매칭
             </h3>
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="mt-1 text-xs text-muted">
               각 활동의 계산 결과를 검증하는 읽기 전용 뷰.
             </p>
           </div>
@@ -196,7 +196,7 @@ export function ActivityTable({
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px] border-collapse text-sm">
-            <thead className="bg-neutral-50 text-left text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:bg-neutral-950/60 dark:text-neutral-400">
+            <thead className="bg-background/60 text-left text-[11px] font-medium tracking-wider text-muted uppercase">
               <tr>
                 <Th>날짜</Th>
                 <Th>활동 유형</Th>
@@ -385,7 +385,7 @@ function ActivityFilterBar({
   return (
     <div
       aria-label="활동 필터"
-      className="border-b border-neutral-200 bg-white px-5 py-4 dark:border-neutral-800 dark:bg-neutral-900"
+      className="border-b border-border bg-surface px-5 py-4"
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <FilterField label="기간" htmlFor="activity-filter-month">
@@ -471,7 +471,7 @@ function ActivityFilterBar({
         <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:min-w-[200px]">
           <label
             htmlFor="activity-sort"
-            className="text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400"
+            className="text-[11px] font-medium tracking-wider text-muted uppercase"
           >
             정렬
           </label>
@@ -492,19 +492,14 @@ function ActivityFilterBar({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:justify-end">
-          <p
-            aria-live="polite"
-            className="text-neutral-500 dark:text-neutral-400"
-          >
+          <p aria-live="polite" className="text-muted">
             전체 <span className="tabular-nums">{totalCount}</span>건 중{' '}
-            <span className="font-semibold text-neutral-800 tabular-nums dark:text-neutral-100">
+            <span className="font-semibold text-foreground tabular-nums">
               {visibleCount}
             </span>
             건 표시
             {filterActive ? (
-              <span className="ml-1.5 text-orange-600 dark:text-orange-400">
-                · 필터 적용 중
-              </span>
+              <span className="ml-1.5 text-accent">· 필터 적용 중</span>
             ) : null}
           </p>
           <Button
@@ -537,7 +532,7 @@ function FilterField({
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={htmlFor}
-        className="text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400"
+        className="text-[11px] font-medium tracking-wider text-muted uppercase"
       >
         {label}
       </label>
@@ -551,7 +546,7 @@ function EmptyFilteredRow({ onReset }: { onReset: () => void }) {
     <tr>
       <td
         colSpan={TABLE_COLUMN_COUNT}
-        className="px-5 py-12 text-center text-sm text-neutral-500 dark:text-neutral-400"
+        className="px-5 py-12 text-center text-sm text-muted"
       >
         <div className="flex flex-col items-center gap-3">
           <p>선택한 필터 조건에 해당하는 활동 데이터가 없습니다.</p>
@@ -575,15 +570,17 @@ function ActivityRow({ row }: { row: CalculatedEmissionRow }) {
   return (
     <tr
       className={cn(
-        'border-t border-neutral-200 align-middle dark:border-neutral-800',
+        'border-t border-border align-middle',
         isValid
-          ? 'hover:bg-neutral-50 dark:hover:bg-neutral-800/40'
-          : 'bg-amber-50/60 hover:bg-amber-50 dark:bg-amber-950/20 dark:hover:bg-amber-950/30',
+          ? 'hover:bg-accent-soft/50'
+          : // amber tones are intentionally kept: invalid rows must remain
+            // visually distinct as a data-quality warning across both themes.
+            'bg-amber-50/60 hover:bg-amber-50 dark:bg-amber-950/20 dark:hover:bg-amber-950/30',
       )}
     >
       <Td mono>{activity.date}</Td>
       <Td>
-        <span className="font-medium text-neutral-900 dark:text-neutral-50">
+        <span className="font-medium text-foreground">
           {formatActivityTypeLabel(activity.activityType)}
         </span>
       </Td>
@@ -598,7 +595,7 @@ function ActivityRow({ row }: { row: CalculatedEmissionRow }) {
       <Td muted>{emissionFactor?.factorUnit ?? PLACEHOLDER}</Td>
       <Td align="right" mono>
         {isValid ? (
-          <span className="font-medium text-neutral-900 dark:text-neutral-50">
+          <span className="font-medium text-foreground">
             {formatKgCO2e(row.emissionKgCO2e)}
           </span>
         ) : (
@@ -644,13 +641,13 @@ function ActiveFactorsBar({ factors }: { factors: readonly EmissionFactor[] }) {
   return (
     <div
       aria-label="현재 적용 중인 배출계수"
-      className="border-b border-neutral-200 bg-neutral-50/60 px-5 py-3 dark:border-neutral-800 dark:bg-neutral-950/30"
+      className="border-b border-border bg-background/60 px-5 py-3"
     >
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+        <p className="text-[11px] font-medium tracking-wider text-muted uppercase">
           현재 적용 중인 배출계수
         </p>
-        <p className="text-[11px] text-neutral-400 dark:text-neutral-500">
+        <p className="text-[11px] text-muted">
           DB의 활성 버전이 그대로 표시됩니다.
         </p>
       </div>
@@ -669,19 +666,17 @@ function FactorChip({ factor }: { factor: EmissionFactor }) {
   return (
     <span
       title={`적용 시작: ${factor.effectiveFrom}`}
-      className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+      className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-border bg-surface px-3 py-1 text-xs shadow-sm"
     >
-      <span className="font-medium text-neutral-700 dark:text-neutral-200">
+      <span className="font-medium text-foreground">
         {formatActivityTypeLabel(factor.activityType)} · {factor.name}
       </span>
-      <span className="font-semibold text-neutral-900 tabular-nums dark:text-neutral-50">
+      <span className="font-semibold text-foreground tabular-nums">
         {formatNumber(factor.factor)}
       </span>
-      <span className="text-neutral-500 dark:text-neutral-400">
-        {factor.factorUnit}
-      </span>
+      <span className="text-muted">{factor.factorUnit}</span>
       <Badge variant="neutral">{formatScopeLabel(factor.scope)}</Badge>
-      <span className="text-[11px] text-neutral-500 tabular-nums dark:text-neutral-400">
+      <span className="text-[11px] text-muted tabular-nums">
         v{factor.version}
       </span>
     </span>
@@ -727,9 +722,7 @@ function Td({
         'px-3 py-2.5 whitespace-nowrap',
         align === 'right' ? 'text-right' : 'text-left',
         mono && 'tabular-nums',
-        muted
-          ? 'text-neutral-500 dark:text-neutral-400'
-          : 'text-neutral-700 dark:text-neutral-200',
+        muted ? 'text-muted' : 'text-foreground/90',
       )}
     >
       {children}

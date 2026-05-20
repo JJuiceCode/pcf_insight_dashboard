@@ -137,29 +137,30 @@ export function ExcelUploadCard({
       onDrop={handleDrop}
       aria-disabled={disabled || undefined}
       className={cn(
-        'flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed bg-white px-6 py-12 text-center transition-colors sm:py-16 dark:bg-neutral-900',
+        'flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed bg-surface px-6 py-12 text-center transition-colors sm:py-16',
         isDragging
-          ? 'border-orange-500 bg-orange-50/60 dark:border-orange-400 dark:bg-orange-950/30'
+          ? 'border-accent bg-accent-soft'
           : hasError
-            ? 'border-red-300 dark:border-red-500/60'
-            : 'border-neutral-300 dark:border-neutral-700',
+            ? // status border: red is intentionally kept for invalid file feedback.
+              'border-red-300 dark:border-red-500/60'
+            : 'border-border',
         disabled && 'cursor-not-allowed opacity-60',
       )}
     >
       <UploadIcon active={isDragging} />
 
       <div className="space-y-1">
-        <p className="text-base font-medium text-neutral-900 dark:text-neutral-50">
+        <p className="text-base font-medium text-foreground">
           Excel 파일을 끌어다 놓거나 선택하세요
         </p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="text-xs text-muted">
           지원 형식: <span className="font-medium">.xlsx</span>,{' '}
           <span className="font-medium">.xls</span>
         </p>
         {selectedFileName ? (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs text-muted">
             현재 선택:{' '}
-            <span className="font-medium text-neutral-700 dark:text-neutral-200">
+            <span className="font-medium text-foreground">
               {selectedFileName}
             </span>
           </p>
@@ -216,8 +217,8 @@ function UploadIcon({ active }: { active: boolean }) {
       className={cn(
         'inline-flex h-12 w-12 items-center justify-center rounded-full transition-colors',
         active
-          ? 'bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-300'
-          : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400',
+          ? 'bg-accent-soft text-accent'
+          : 'bg-background text-muted',
       )}
     >
       <svg

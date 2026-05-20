@@ -49,16 +49,16 @@ export function ImportFlowExplanation() {
   return (
     <Card aria-labelledby="import-flow-title" className="space-y-4">
       <div>
-        <p className="text-[11px] font-medium tracking-wider text-orange-600 uppercase dark:text-orange-400">
+        <p className="text-[11px] font-medium tracking-wider text-accent uppercase">
           가져오기 워크플로우
         </p>
         <h3
           id="import-flow-title"
-          className="mt-1 text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+          className="mt-1 text-base font-semibold tracking-tight text-foreground"
         >
           업로드 이후 처리 과정
         </h3>
-        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="mt-1 text-xs text-muted">
           이번 단계에서는 업로드 UI까지만 동작합니다. 아래 단계는 이후 작업에서
           자동으로 이어집니다.
         </p>
@@ -70,7 +70,7 @@ export function ImportFlowExplanation() {
             <StepDot index={step.index} />
             <div className="min-w-0 flex-1 pb-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                <p className="text-sm font-medium text-foreground">
                   {step.title}
                 </p>
                 {idx === 0 ? (
@@ -79,7 +79,7 @@ export function ImportFlowExplanation() {
                   <Badge variant="neutral">예정</Badge>
                 )}
               </div>
-              <p className="mt-0.5 text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+              <p className="mt-0.5 text-xs leading-5 text-muted">
                 {step.description}
               </p>
             </div>
@@ -90,7 +90,7 @@ export function ImportFlowExplanation() {
   );
 }
 
-/** 단계 번호를 표시하는 원형 마커. 첫 단계는 오렌지 액센트로 강조한다. */
+/** 단계 번호를 표시하는 원형 마커. 첫 단계는 액센트로 강조한다. */
 function StepDot({ index }: { index: number }) {
   const isFirst = index === 1;
   return (
@@ -98,8 +98,8 @@ function StepDot({ index }: { index: number }) {
       aria-hidden
       className={
         isFirst
-          ? 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-500 text-xs font-semibold text-white shadow-sm dark:bg-orange-500'
-          : 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-xs font-semibold text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400'
+          ? 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white shadow-sm'
+          : 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-xs font-semibold text-muted'
       }
     >
       {index}

@@ -23,10 +23,10 @@ const BASE_BADGE =
   'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap';
 
 const VARIANT_CLASSES: Record<BadgeVariant, string> = {
-  neutral:
-    'border-neutral-200 bg-neutral-100 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200',
-  accent:
-    'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-300',
+  neutral: 'border-border bg-background text-foreground',
+  accent: 'border-accent/20 bg-accent-soft text-accent',
+  // status badges: red/green/yellow tones are intentionally preserved
+  // so success/warning semantics remain perceivable in both light and dark.
   success:
     'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300',
   warning:

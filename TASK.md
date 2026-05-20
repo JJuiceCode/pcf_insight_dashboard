@@ -39,8 +39,7 @@ The next phase focuses on:
 - [x] Responsive dashboard layout
 - [x] AppShell / Sidebar / Header
 - [x] Shared UI components
-- [x] Tailwind dark mode foundation
-- [x] Orange accent system
+- [x] Tailwind light & dark mode system
 
 ---
 

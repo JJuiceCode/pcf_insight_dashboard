@@ -55,7 +55,6 @@ The dashboard should help executives and operators understand:
 - The UI should feel like a modern SaaS analytics dashboard.
 - The layout must be responsive.
 - Support light and dark mode using Tailwind CSS.
-- Use orange as the main accent color.
 - Tables must be horizontally scrollable on small screens.
 - KPI values must come from calculation utilities, not hardcoded numbers.
 - All user-facing UI text, labels, helper messages, and placeholder content should be written in Korean.

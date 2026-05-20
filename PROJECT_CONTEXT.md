@@ -35,7 +35,6 @@ Product Carbon Footprint (PCF) Dashboard for:
   - KpiCard
 
 - Tailwind dark mode foundation implemented
-- Orange accent design system applied
 
 ---
 
@@ -106,8 +105,7 @@ prisma/
 - Avoid business logic inside React components
 - Dashboard values should come from calculation utilities
 - Avoid `any`
-- Use Tailwind dark mode
-- Use orange accent consistently
+- Use Tailwind dark mode & light mode
 
 ---
 

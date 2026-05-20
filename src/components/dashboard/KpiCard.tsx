@@ -37,13 +37,12 @@ export function KpiCard({
   return (
     <Card
       className={cn(
-        accent &&
-          'border-orange-200 ring-1 ring-orange-200/60 dark:border-orange-900/60 dark:ring-orange-900/40',
+        accent && 'border-accent/30 ring-1 ring-accent/20',
         className,
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+        <p className="text-[11px] font-medium tracking-wider text-muted uppercase">
           {label}
         </p>
         {badge ? (
@@ -54,22 +53,20 @@ export function KpiCard({
       <p
         className={cn(
           'mt-3 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl',
-          accent
-            ? 'text-orange-700 dark:text-orange-300'
-            : 'text-neutral-900 dark:text-neutral-50',
+          accent ? 'text-accent' : 'text-foreground',
         )}
       >
         {value}
       </p>
 
       {supportingValue ? (
-        <p className="mt-1 text-sm text-neutral-500 tabular-nums dark:text-neutral-400">
+        <p className="mt-1 text-sm text-muted tabular-nums">
           {supportingValue}
         </p>
       ) : null}
 
       {description ? (
-        <p className="mt-3 text-sm leading-5 text-neutral-600 dark:text-neutral-300">
+        <p className="mt-3 text-sm leading-5 text-foreground/80">
           {description}
         </p>
       ) : null}

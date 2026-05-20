@@ -7,11 +7,12 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 const BASE_SELECT =
-  'block w-full appearance-none rounded-md border bg-white bg-[length:1rem_1rem] bg-[right_0.65rem_center] bg-no-repeat px-3 py-2 pr-9 text-sm text-neutral-900 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-neutral-900 dark:text-neutral-50';
+  'block w-full appearance-none rounded-md border bg-surface bg-[length:1rem_1rem] bg-[right_0.65rem_center] bg-no-repeat px-3 py-2 pr-9 text-sm text-foreground shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60';
 
 const DEFAULT_BORDER =
-  'border-neutral-300 focus-visible:border-orange-500 focus-visible:ring-orange-500/40 dark:border-neutral-700';
+  'border-border focus-visible:border-accent focus-visible:ring-accent/30';
 
+// status border: red is intentionally kept so error state stays unambiguous.
 const ERROR_BORDER =
   'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/40 dark:border-red-500/80';
 

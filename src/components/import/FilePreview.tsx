@@ -27,12 +27,12 @@ export function FilePreview({ file, onClear, disabled = false }: FilePreviewProp
     <Card aria-labelledby="file-preview-title" className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-medium tracking-wider text-orange-600 uppercase dark:text-orange-400">
+          <p className="text-[11px] font-medium tracking-wider text-accent uppercase">
             업로드 상태
           </p>
           <h3
             id="file-preview-title"
-            className="mt-1 text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+            className="mt-1 text-sm font-semibold tracking-tight text-foreground"
           >
             선택된 파일
           </h3>
@@ -69,23 +69,21 @@ function SelectedFileSummary({
   const extension = getFileExtension(file.name);
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950/40">
+    <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-border bg-background/60 px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
         <FileIcon />
         <div className="min-w-0">
           <p
-            className="truncate text-sm font-medium text-neutral-900 dark:text-neutral-50"
+            className="truncate text-sm font-medium text-foreground"
             title={file.name}
           >
             {file.name}
           </p>
-          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="mt-0.5 text-xs text-muted">
             <span className="tabular-nums">{formatFileSize(file.size)}</span>
             {extension ? (
               <>
-                <span className="mx-1.5 text-neutral-300 dark:text-neutral-600">
-                  ·
-                </span>
+                <span className="mx-1.5 text-muted/60">·</span>
                 <span className="font-medium uppercase">{extension}</span>
               </>
             ) : null}
@@ -110,11 +108,9 @@ function SelectedFileSummary({
 
 function EmptyState() {
   return (
-    <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50/40 px-4 py-5 text-center dark:border-neutral-800 dark:bg-neutral-950/30">
-      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-        선택된 파일이 없습니다.
-      </p>
-      <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+    <div className="rounded-xl border border-dashed border-border bg-background/40 px-4 py-5 text-center">
+      <p className="text-sm text-muted">선택된 파일이 없습니다.</p>
+      <p className="mt-1 text-xs text-muted">
         위 업로드 카드에서 Excel 파일을 선택하세요.
       </p>
     </div>
@@ -148,7 +144,7 @@ function FileIcon() {
   return (
     <span
       aria-hidden
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-300"
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent"
     >
       <svg
         viewBox="0 0 24 24"

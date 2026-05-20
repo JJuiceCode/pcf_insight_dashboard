@@ -282,7 +282,7 @@ export function ActivityForm({
               readOnly
               tabIndex={-1}
               placeholder="—"
-              className="bg-neutral-50 text-neutral-700 dark:bg-neutral-950 dark:text-neutral-300"
+              className="bg-background text-foreground/80"
             />
           </TextField>
         </div>
@@ -296,7 +296,7 @@ export function ActivityForm({
         />
       </div>
 
-      <footer className="flex items-center justify-end gap-2 border-t border-neutral-200 bg-neutral-50 px-5 py-4 sm:px-6 dark:border-neutral-800 dark:bg-neutral-950/40">
+      <footer className="flex items-center justify-end gap-2 border-t border-border bg-background/60 px-5 py-4 sm:px-6">
         <Button
           variant="ghost"
           onClick={onCancel}
@@ -316,10 +316,10 @@ export function ActivityForm({
 type PreviewTone = 'neutral' | 'accent' | 'warning';
 
 const PREVIEW_TONE_CLASSES: Record<PreviewTone, string> = {
-  neutral:
-    'border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950/40',
-  accent:
-    'border-orange-200 bg-orange-50/70 dark:border-orange-900/60 dark:bg-orange-950/20',
+  neutral: 'border-border bg-background/60',
+  accent: 'border-accent/20 bg-accent-soft',
+  // amber tones intentionally kept: warning state must remain visually
+  // distinct from the accent panel in both themes.
   warning:
     'border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20',
 };
@@ -336,7 +336,7 @@ function FactorPreview({
   if (!hasSelectionStarted) {
     return (
       <PreviewShell tone="neutral">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-muted">
           활동 유형과 설명을 선택하면 매칭된 배출계수와 예상 배출량(kgCO2e)을
           미리 확인할 수 있습니다.
         </p>
@@ -361,34 +361,30 @@ function FactorPreview({
     <PreviewShell tone="accent">
       <dl className="space-y-2 text-sm">
         <PreviewRow label="매칭된 배출계수">
-          <span className="font-medium text-neutral-900 dark:text-neutral-50">
+          <span className="font-medium text-foreground">
             {matchedFactor.name}
           </span>
-          <span className="mx-1.5 text-neutral-400 dark:text-neutral-500">
-            ·
-          </span>
+          <span className="mx-1.5 text-muted">·</span>
           <span className="tabular-nums">
             {formatNumber(matchedFactor.factor)} {matchedFactor.factorUnit}
           </span>
-          <span className="mx-1.5 text-neutral-400 dark:text-neutral-500">
-            ·
-          </span>
+          <span className="mx-1.5 text-muted">·</span>
           <span>{formatScopeLabel(matchedFactor.scope)}</span>
         </PreviewRow>
 
         <PreviewRow label="배출계수 버전">
-          <span className="text-neutral-600 tabular-nums dark:text-neutral-300">
+          <span className="text-foreground/80 tabular-nums">
             {matchedFactor.version}
           </span>
         </PreviewRow>
 
         <PreviewRow label="계산된 배출량">
           {previewEmissionKgCO2e !== null ? (
-            <span className="font-semibold text-orange-700 tabular-nums dark:text-orange-300">
+            <span className="font-semibold text-accent tabular-nums">
               {formatKgCO2e(previewEmissionKgCO2e)}
             </span>
           ) : (
-            <span className="text-neutral-500 dark:text-neutral-400">
+            <span className="text-muted">
               수량을 입력하면 예상 배출량을 미리 확인할 수 있습니다.
             </span>
           )}
@@ -410,7 +406,7 @@ function PreviewShell({
       aria-label="배출계수 미리보기"
       className={cn('rounded-lg border p-4', PREVIEW_TONE_CLASSES[tone])}
     >
-      <p className="mb-2 text-[11px] font-medium tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
+      <p className="mb-2 text-[11px] font-medium tracking-wider text-muted uppercase">
         배출계수 미리보기
       </p>
       {children}
@@ -427,9 +423,7 @@ function PreviewRow({
 }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2">
-      <dt className="text-xs tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
-        {label}
-      </dt>
+      <dt className="text-xs tracking-wider text-muted uppercase">{label}</dt>
       <dd className="text-sm">{children}</dd>
     </div>
   );

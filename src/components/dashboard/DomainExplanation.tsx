@@ -44,12 +44,12 @@ export function DomainExplanation() {
       <Card>
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] font-medium tracking-wider text-orange-600 uppercase dark:text-orange-400">
+            <p className="text-[11px] font-medium tracking-wider text-accent uppercase">
               PCF 개요
             </p>
             <h2
               id="domain-explanation-title"
-              className="mt-1 text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
+              className="mt-1 text-lg font-semibold tracking-tight text-foreground"
             >
               제품 탄소발자국 이해하기
             </h2>
@@ -57,8 +57,8 @@ export function DomainExplanation() {
           <Badge variant="accent">CT-045 Monitor</Badge>
         </header>
 
-        <p className="mt-4 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-          <strong className="font-semibold text-neutral-900 dark:text-neutral-50">
+        <p className="mt-4 text-sm leading-6 text-foreground/80">
+          <strong className="font-semibold text-foreground">
             제품 탄소발자국(Product Carbon Footprint, PCF)
           </strong>
           은 제품 생산 과정에서 발생하는 전체 온실가스 배출량을 의미하며, kgCO2e
@@ -66,29 +66,29 @@ export function DomainExplanation() {
           배출량으로 변환됩니다.
         </p>
 
-        <p className="mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-mono text-[13px] text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-200">
+        <p className="mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 font-mono text-[13px] text-foreground">
           <span>배출량 (kgCO2e)</span>
-          <span aria-hidden className="text-neutral-400 dark:text-neutral-500">
+          <span aria-hidden className="text-muted">
             =
           </span>
           <span>활동량</span>
-          <span aria-hidden className="text-neutral-400 dark:text-neutral-500">
+          <span aria-hidden className="text-muted">
             ×
           </span>
-          <span className="text-orange-600 dark:text-orange-400">배출계수</span>
+          <span className="text-accent">배출계수</span>
         </p>
 
         <ul className="mt-5 grid gap-3 sm:grid-cols-3">
           {SCOPES.map((entry) => (
             <li
               key={entry.scope}
-              className="rounded-lg border border-neutral-200 bg-neutral-50/60 p-3 dark:border-neutral-800 dark:bg-neutral-950/40"
+              className="rounded-lg border border-border bg-background/60 p-3"
             >
               <Badge variant={entry.variant}>{entry.scope}</Badge>
-              <p className="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-50">
+              <p className="mt-2 text-sm font-medium text-foreground">
                 {entry.title}
               </p>
-              <p className="mt-1 text-xs leading-5 text-neutral-600 dark:text-neutral-400">
+              <p className="mt-1 text-xs leading-5 text-muted">
                 {entry.description}
               </p>
             </li>

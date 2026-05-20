@@ -54,11 +54,12 @@ Product Carbon Footprint (PCF) Dashboard for:
 ### Data Management
 
 - Reusable DateInput component implemented (KRDS-inspired)
-- Prisma + SQLite database integrated
+- Prisma ORM integrated (SQLite for early local dev, PostgreSQL/Supabase for deployment)
 - Versioned emission factor model implemented
 - EmissionFactor separated from Activity data
 - Repository + Service architecture introduced
 - Active emission factors displayed in dashboard
+- `db push` 기반 단방향 스키마 워크플로우 — migrations 폴더 없이 환경별 DB에 직접 적용
 
 ---
 
@@ -123,3 +124,5 @@ prisma/
 - [x] Step 11-B: Connect Excel upload UI to import API
 
 - [x] Step 12: Recalculate dashboard from imported DB data
+
+- [x] Step 13: Supabase Postgres 마이그레이션 (Vercel 배포 준비)

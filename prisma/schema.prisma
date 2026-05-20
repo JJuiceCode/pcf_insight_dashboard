@@ -13,8 +13,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  // Supabase에서는 5432 직결 URL을 그대로 넣으면 런타임과 DDL 모두 한 변수로 충분하다.
+  // 운영 트래픽이 커서 pgBouncer pooler를 분리하고 싶다면
+  // `directUrl = env("DIRECT_URL")`을 추가하고 .env에 `DIRECT_URL`을 함께 정의한다.
+  url = env("DATABASE_URL")
 }
 
 model EmissionFactor {

@@ -19,12 +19,12 @@ interface NavItem {
  */
 const NAV_ITEMS: readonly NavItem[] = [
   {
-    label: '대시보드',
+    label: '대시보드 (로컬 시드 data)',
     href: '/',
     description: 'CT-045 시드 기반 PCF 현황',
   },
   {
-    label: '데이터 가져오기',
+    label: '엑셀 데이터 가져오기',
     href: '/import',
     description: 'Excel 파일 업로드 워크플로우',
   },
@@ -62,7 +62,10 @@ export function Sidebar() {
         <ul className="flex gap-1 overflow-x-auto lg:flex-col lg:gap-0.5 lg:overflow-visible">
           {NAV_ITEMS.map((item) => (
             <li key={item.href} className="shrink-0 lg:shrink">
-              <SidebarLink item={item} isActive={isItemActive(pathname, item)} />
+              <SidebarLink
+                item={item}
+                isActive={isItemActive(pathname, item)}
+              />
             </li>
           ))}
         </ul>
@@ -89,13 +92,7 @@ function isItemActive(pathname: string | null, item: NavItem): boolean {
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-function SidebarLink({
-  item,
-  isActive,
-}: {
-  item: NavItem;
-  isActive: boolean;
-}) {
+function SidebarLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
   const base =
     'flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500';
 

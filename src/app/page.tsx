@@ -2,32 +2,37 @@ import { DashboardClient } from '@/components/dashboard/DashboardClient';
 import { AppShell } from '@/components/layout/AppShell';
 import { Header } from '@/components/layout/Header';
 import { DEMO_PRODUCT_ID } from '@/features/emissions/constants';
-import { loadDashboardDataByProductId } from '@/features/emissions/services/dashboardDataService';
-
-// 요청마다 최신 DB 값을 반영하기 위해 캐싱을 끈다.
-// 시드 또는 폼으로 추가된 활동이 바뀌면 새로고침만으로 KPI가 갱신된다.
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+import {
+  DEMO_ACTIVITY_RECORDS,
+  DEMO_EMISSION_FACTORS,
+} from '@/features/emissions/seed';
+import { calculateActivitiesWithActiveFactors } from '@/features/emissions/services/emissionCalculationService';
 
 /**
  * 시드 기반 CT-045 데모 대시보드 서버 진입 지점.
  *
- * `dashboardDataService`가 활동·계수 로드와 활성 계수 매칭까지 묶어 처리하므로
- * 라우트 파일에는 productId 선택과 화면 조립만 남는다.
+ * 이 라우트는 **DB를 읽지 않는다**. `features/emissions/seed.ts`의 in-memory 데이터를
+ * 직접 사용하기 때문에 DB가 비어 있거나 새 환경에 시드가 적재되지 않았어도
+ * 대시보드는 항상 동일한 데모 화면을 보여준다.
  *
- * `/import`와 데이터 소스를 분리하기 위해 이 라우트는 `DEMO_PRODUCT_ID`만 읽는다.
- * Excel로 가져온 행은 `IMPORTED_PRODUCT_ID`에 저장되어 이 화면에는 노출되지 않는다.
+ * 가져온 데이터(`/import`)는 DB에서 별도 productId로 읽으므로, 두 데이터 소스가
+ * 코드 수준에서도 완전히 분리되어 있어 이중 집계가 발생하지 않는다.
+ *
+ * 계산 파이프라인은 `/import`와 동일하게 `calculateActivitiesWithActiveFactors`를
+ * 사용한다. 입력 데이터의 출처만 다르고 KPI·Scope·월별 추이를 만드는 규칙은 같다.
  */
-export default async function Home() {
-  const { initialRows, emissionFactors } =
-    await loadDashboardDataByProductId(DEMO_PRODUCT_ID);
+export default function Home() {
+  const initialRows = calculateActivitiesWithActiveFactors(
+    DEMO_ACTIVITY_RECORDS,
+    DEMO_EMISSION_FACTORS,
+  );
 
   return (
     <AppShell>
       <Header />
       <DashboardClient
         initialRows={initialRows}
-        emissionFactors={emissionFactors}
+        emissionFactors={DEMO_EMISSION_FACTORS}
         productId={DEMO_PRODUCT_ID}
       />
     </AppShell>
